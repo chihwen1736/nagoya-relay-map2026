@@ -379,7 +379,7 @@
       display: contents;
     }
 
-    /* 排列順序：標題(header,已在 main 之外) → 分頁 → 地圖(含圖層控制) → 清單標題 → 清單 */
+    /* 排列順序：標題(header,已在 main 之外) → 分頁 → 清單標題 → 清單 → 地圖(含圖層控制) */
     #sidebar-tabs {
       order: 1;
       flex-shrink: 0;
@@ -402,28 +402,28 @@
       color: var(--navy-light);
     }
 
-    /* 地圖高度縮小為約畫面 40%，並設定合理的最小／最大高度，
-       確保不超過手機畫面高度的 45% */
-    #map {
-      order: 2;
-      flex: none;
-      width: 100%;
-      height: 40vh;
-      min-height: 320px;
-      max-height: 420px;
-    }
-
     .sidebar-header {
-      order: 3;
+      order: 2;
       flex-shrink: 0;
     }
 
-    /* 資訊清單為手機版主要操作區域：不設定固定高度、不裁切，
+    /* 資訊清單為手機版主要操作區域（清單優先）：不設定固定高度、不裁切，
        內容隨頁面自然向下捲動，預設即完整顯示（不收合） */
     #accommodation-list {
-      order: 4;
+      order: 3;
       flex: none;
       overflow: visible;
+    }
+
+    /* 地圖放在清單下方，高度約畫面 48%，並設定合理的最小／最大高度 */
+    #map {
+      order: 4;
+      flex: none;
+      width: 100%;
+      height: 48vh;
+      min-height: 340px;
+      max-height: 500px;
+      scroll-margin-top: 10px; /* scrollIntoView 捲動時保留少許間距，不完全貼齊畫面頂端 */
     }
 
     /* 資訊卡（手機版）尺寸略縮小，讓同一畫面可看到標題＋2～3筆資料 */
@@ -1372,15 +1372,6 @@ function isMobileView() {
   return window.matchMedia('(max-width: 768px)').matches;
 }
 
-// 手機版：平滑捲動到地圖，並保留約 8～12px 間距，避免地圖完全貼齊瀏覽器最上方
-function scrollToMapWithOffset(gap = 10) {
-  const mapEl = document.getElementById('map');
-  if (!mapEl) return;
-  const currentTop = mapEl.getBoundingClientRect().top;
-  const targetY = window.pageYOffset + currentTop - gap;
-  window.scrollTo({ top: Math.max(targetY, 0), behavior: 'smooth' });
-}
-
 function renderList(tab) {
   activeTab = tab;
   const config = tabConfig[tab];
@@ -1408,27 +1399,34 @@ function renderList(tab) {
     li.dataset.id = item.id;
     li.innerHTML = config.renderItem(item);
     li.addEventListener('click', () => {
+      // 1. 確認該類別的地圖圖層已開啟
       if (!map.hasLayer(config.layer)) {
         map.addLayer(config.layer);
         const toggleEl = document.getElementById(config.toggleId);
         if (toggleEl) toggleEl.checked = true;
       }
 
-      const flyAndOpenPopup = () => {
-        map.flyTo([item.lat, item.lng], 15, { duration: 0.8 });
-        config.markerMap[item.id].openPopup();
-      };
+      // 2. 設定清單項目為 active（清單高亮效果）
+      setActiveListItem(tab, item.id);
 
       if (isMobileView()) {
-        // 手機版：先平滑捲動到地圖（保留約 8～12px 間距），捲動完成後再定位並開啟 Popup
-        scrollToMapWithOffset(10);
-        window.setTimeout(flyAndOpenPopup, 450);
-      } else {
-        // 桌機版：維持原有行為，不受影響
-        flyAndOpenPopup();
-      }
+        // 手機版（清單優先、地圖定位）：
+        // 3. 平滑捲動到地圖區域
+        const mapEl = document.getElementById('map');
+        if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-      setActiveListItem(tab, item.id); // 保留清單高亮（active）效果
+        // 4～6. 捲動完成後（約 300ms）才重新計算地圖尺寸、定位並開啟 Popup，
+        //       避免畫面尚未捲動完成就開啟 Popup 造成定位不準
+        window.setTimeout(() => {
+          map.invalidateSize();
+          map.flyTo([item.lat, item.lng], 15, { duration: 0.8 });
+          config.markerMap[item.id].openPopup();
+        }, 300);
+      } else {
+        // 桌機版：維持原有行為，不受影響（直接定位並開啟 Popup）
+        map.flyTo([item.lat, item.lng], 15, { duration: 0.8 });
+        config.markerMap[item.id].openPopup();
+      }
     });
     listEl.appendChild(li);
   });
