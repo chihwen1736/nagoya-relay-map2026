@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026名古屋亞運代表隊中繼站據點分布圖</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+  :root {
+    --navy: #1c2b45;
+    --navy-light: #2c4066;
+    --accent: #c0392b;
+    --bg: #f5f6f8;
+    --panel-bg: #ffffff;
+    --border: #dde1e7;
+    --text-main: #23272f;
+    --text-sub: #6b7280;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--accent);
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+
+  header .subtitle {
+    font-size: 12px;
+    color: #c7cedd;
+    margin-top: 2px;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  /* 左側清單 */
+  #sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--panel-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  #sidebar .sidebar-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+    background: #eef1f6;
+  }
+
+  #sidebar .sidebar-header .count {
+    color: var(--text-sub);
+    font-weight: 400;
+    font-size: 12px;
+  }
+
+  /* 左側清單分頁按鈕 */
+  #sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #sidebar-tabs button {
+    flex: 1;
+    border: none;
+    background: #eef1f6;
+    color: var(--text-sub);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 4px;
+    cursor: pointer;
+    font-family: inherit;
+    border-bottom: 3px solid transparent;
+  }
+
+  #sidebar-tabs button:hover {
+    background: #e5eaf3;
+  }
+
+  #sidebar-tabs button.active {
+    background: var(--panel-bg);
+    color: var(--navy);
+  }
+
+  #sidebar-tabs button[data-tab="accommodation"].active {
+    border-bottom-color: #2c4066;
+  }
+
+  #sidebar-tabs button[data-tab="venue"].active {
+    border-bottom-color: #c0392b;
+  }
+
+  #sidebar-tabs button[data-tab="relay"].active {
+    border-bottom-color: #1f9d55;
+  }
+
+  #accommodation-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  #accommodation-list li {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  #accommodation-list li:hover {
+    background: #f0f3f8;
+  }
+
+  #accommodation-list li.active {
+    background: #eaf0fb;
+    border-left: 4px solid var(--navy-light);
+    padding-left: 14px;
+  }
+
+  #accommodation-list .item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+  }
+
+  #accommodation-list .item-sport {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--navy-light);
+    background: #e5eaf3;
+    border-radius: 3px;
+    padding: 1px 8px;
+    margin-bottom: 4px;
+  }
+
+  /* 依分頁區分小標籤顏色：住宿=深藍（預設）、比賽場館=紅、中繼站=綠 */
+  #accommodation-list .item-sport.tag-venue {
+    color: #c0392b;
+    background: #fbe6e3;
+  }
+
+  #accommodation-list .item-sport.tag-relay {
+    color: #1f9d55;
+    background: #e2f5ea;
+  }
+
+  #accommodation-list .item-address {
+    font-size: 12px;
+    color: var(--text-sub);
+    line-height: 1.4;
+  }
+
+  /* 地圖 */
+  #map {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* 圖層開關控制面板 */
+  .layer-control {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    min-width: 130px;
+  }
+
+  .layer-control .layer-control-title {
+    font-weight: 700;
+    color: var(--navy);
+    font-size: 12px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .layer-control label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    cursor: pointer;
+    color: var(--text-main);
+  }
+
+  .layer-control input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--navy-light);
+  }
+
+  .layer-control .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .swatch.accommodation { background: #2c4066; }
+  .swatch.venue { background: #c0392b; }
+  .swatch.relay { background: #1f9d55; }
+
+  /* Leaflet popup 客製化 */
+  .leaflet-popup-content-wrapper {
+    border-radius: 4px;
+  }
+
+  .popup-content .popup-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 6px;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 4px;
+  }
+
+  .popup-content.popup-venue .popup-title {
+    border-bottom-color: #c0392b;
+  }
+
+  .popup-content.popup-relay .popup-title {
+    border-bottom-color: #1f9d55;
+  }
+
+  .popup-content table {
+    border-collapse: collapse;
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+
+  .popup-content table td {
+    vertical-align: top;
+    padding: 2px 0;
+  }
+
+  .popup-content table td.label {
+    color: var(--text-sub);
+    white-space: nowrap;
+    padding-right: 10px;
+    font-weight: 600;
+  }
+
+  .popup-content .popup-gmap-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #fff;
+    background: var(--navy-light);
+    padding: 4px 10px;
+    border-radius: 3px;
+    text-decoration: none;
+  }
+
+  .popup-content .popup-gmap-link:hover {
+    background: var(--navy);
+  }
+
+  footer {
+    background: var(--navy);
+    color: #9aa5bd;
+    font-size: 11px;
+    text-align: center;
+    padding: 6px 0;
+    flex-shrink: 0;
+  }
+
+  /* =========================================================
+     RWD — 響應式設計
+     以下為新增的媒體查詢（media query），僅調整版面配置與尺寸，
+     不影響、不覆寫桌機版既有樣式與任何 JavaScript 功能。
+  ========================================================= */
+
+  /* ================= 平板 (Tablet, ≤1024px)：維持左右配置，側欄略縮小 ================= */
+  @media (max-width: 1024px) and (min-width: 769px) {
+    #sidebar {
+      width: 250px;
+    }
+
+    #sidebar-tabs button {
+      font-size: 12px;
+      padding: 9px 3px;
+    }
+
+    #accommodation-list .item-name {
+      font-size: 13.5px;
+    }
+
+    #accommodation-list .item-address {
+      font-size: 11.5px;
+    }
+  }
+
+  /* ================= 手機 (Mobile, ≤768px)：改為上下排列 ================= */
+  @media (max-width: 768px) {
+    html, body {
+      overflow-x: hidden; /* 避免左右滑動 */
+    }
+
+    header {
+      padding: 10px 14px;
+    }
+
+    header h1 {
+      font-size: 16px;
+    }
+
+    header .subtitle {
+      font-size: 10px;
+    }
+
+    /* main 改為垂直排列，並允許整體垂直捲動 */
+    main {
+      flex-direction: column;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* #sidebar 本身不再產生版面容器，讓內部元素（分頁 / 標題 / 清單）
+       各自成為 main 的排版項目，方可用 order 重新排列順序，
+       DOM 結構與既有 JavaScript 完全不變 */
+    #sidebar {
+      display: contents;
+    }
+
+    /* 排列順序：標題(header,已在 main 之外) → 分頁 → 地圖(含圖層控制) → 清單標題 → 清單 */
+    #sidebar-tabs {
+      order: 1;
+      flex-shrink: 0;
+    }
+
+    #sidebar-tabs button {
+      padding: 13px 4px;
+      font-size: 14px;
+    }
+
+    #map {
+      order: 2;
+      flex: 0 0 47vh;
+      width: 100%;
+      min-height: 47vh;
+    }
+
+    .sidebar-header {
+      order: 3;
+      flex-shrink: 0;
+    }
+
+    #accommodation-list {
+      order: 4;
+      flex: none;
+      overflow-y: visible;
+    }
+
+    /* 資訊卡（手機版）尺寸加大，方便觸控閱讀 */
+    #accommodation-list li {
+      padding: 16px 18px;
+    }
+
+    #accommodation-list .item-name {
+      font-size: 15px;
+    }
+
+    #accommodation-list .item-sport {
+      font-size: 12.5px;
+      padding: 3px 10px;
+    }
+
+    #accommodation-list .item-address {
+      font-size: 13px;
+    }
+
+    /* 圖層開關控制面板：加大觸控區域 */
+    .layer-control {
+      padding: 8px 10px;
+      font-size: 13px;
+      min-width: 112px;
+    }
+
+    .layer-control .layer-control-title {
+      font-size: 12.5px;
+    }
+
+    .layer-control label {
+      padding: 7px 0;
+    }
+
+    .layer-control input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Popup：加大字體、限制寬度避免超出畫面造成左右滑動 */
+    .leaflet-popup-content-wrapper {
+      max-width: 78vw;
+    }
+
+    .popup-content .popup-title {
+      font-size: 16px;
+    }
+
+    .popup-content table {
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+
+    .popup-content table td.label {
+      padding-right: 8px;
+    }
+
+    .popup-content .popup-gmap-link {
+      font-size: 13.5px;
+      padding: 7px 14px;
+    }
+
+    footer {
+      font-size: 10px;
+      padding: 8px 10px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div>
+      <h1>2026名古屋亞運代表隊中繼站據點分布圖</h1>
+      <div class="subtitle">Chinese Taipei Delegation Relay Station Location Map — Aichi-Nagoya 2026 Asian Games</div>
+    </div>
+  </header>
+
+  <main>
+    <aside id="sidebar">
+      <div id="sidebar-tabs">
+        <button type="button" data-tab="accommodation" class="active">住宿地點</button>
+        <button type="button" data-tab="venue">比賽場館</button>
+        <button type="button" data-tab="relay">中繼站</button>
+      </div>
+      <div class="sidebar-header">
+        <span id="list-title">住宿地點清單</span> <span class="count" id="list-count"></span>
+      </div>
+      <ul id="accommodation-list"></ul>
+    </aside>
+
+    <div id="map"></div>
+  </main>
+
+  <footer>
+    資料僅供內部作業參考使用，正式資料請以主辦單位公告為準
+  </footer>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+/* =========================================================
+   住宿資料陣列 —— 之後可直接替換 / 新增 / 刪除物件即可
+
+   欄位說明：
+   id            : 唯一識別碼（請勿重複）
+   hotelName     : 住宿名稱
+   address       : 住宿地址
+   lat, lng      : 座標（必填，Leaflet Marker 需要用這兩個值來定位，
+                    Google Maps 連結只能作為輔助資訊，
+                    無法取代 lat / lng，請務必手動查好座標填入）
+   googleMapUrl  : Google Maps 連結（供人工點擊確認位置 / 導航使用）
+   teams         : 入住代表隊運動種類，請用陣列格式，例如 ["羽球", "桌球"]
+   note          : 備註
+
+   ※ 更新資料時，直接複製一組物件、修改內容即可，
+     不需要更動下方的地圖 / 清單渲染程式碼。
+========================================================= */
+const accommodations = [
+  {
+    id: 1,
+    hotelName: "金城碼頭",
+    address: "3 Chome Kinjofuto, Minato Ward, Nagoya, Aichi 455-0848日本",
+    lat: 35.0466558445123,
+    lng: 136.847897344974,
+    googleMapUrl: "https://maps.app.goo.gl/9mxt3xchtCR7tmao7",
+    teams: ["射箭", "3x3籃球", "輕艇競速", "綜合格鬥", "體操(競技)", "體操(韻律)", "柔道", "卡巴迪", "划船", "桌球", "舉重", "角力", "武術"],
+    note: "選手村-郵輪"
+  },
+  {
+    id: 2,
+    hotelName: "花園碼頭",
+    address: "1-108 Minatomachi, Minato Ward, Nagoya, Aichi 455-0033日本",
+    lat: 35.089887282353,
+    lng: 136.882748149417,
+    googleMapUrl: "https://maps.app.goo.gl/EBvhesSs76omibN5A",
+    teams: ["壘球", "籃球", "柔術", "克拉術", "自由車(登山)"],
+    note: "選手村-貨櫃屋"
+  },
+  {
+    id: 3,
+    hotelName: "名古屋東急飯店",
+    address: "4 Chome-6-8 Sakae, Naka Ward, Nagoya, Aichi 460-0008日本",
+    lat: 35.1685930987743,
+    lng: 136.913835723463,
+    googleMapUrl: "https://maps.app.goo.gl/vJ7uZCXEa9QcVdLx5",
+    teams: ["羽球"],
+    note: ""
+  },
+  {
+    id: 4,
+    hotelName: "名古屋錦日航都市酒店",
+    address: "1 Chome-16-36 Nishiki, Naka Ward, Nagoya, Aichi 460-0003日本",
+    lat: 35.1689124368409,
+    lng: 136.89330207602,
+    googleMapUrl: "https://maps.app.goo.gl/1mErLAdLF9hgtueM9",
+    teams: ["高爾夫", "軟式網球"],
+    note: ""
+  },
+  {
+    id: 5,
+    hotelName: "Green Rich Hotel Nagoya Nishiki",
+    address: "2 Chome-7-4 Nishiki, Naka Ward, Nagoya, Aichi 460-0003日本",
+    lat: 35.1722063629173,
+    lng: 136.899155236795,
+    googleMapUrl: "https://maps.app.goo.gl/rgaX2FVqep2gfBWBA",
+    teams: ["高爾夫"],
+    note: ""
+  },
+  {
+    id: 6,
+    hotelName: "名古屋斯特令格飯店",
+    address: "4 Chome-60-7 Hiraikecho, Nakamura Ward, Nagoya, Aichi 453-0872日本",
+    lat: 35.1642458656371,
+    lng: 136.884652635702,
+    googleMapUrl: "https://maps.app.goo.gl/ANGeaPrHwmQgtdca8",
+    teams: ["網球"],
+    note: ""
+  },
+  {
+    id: 7,
+    hotelName: "名古屋觀光飯店",
+    address: "1 Chome-19-30 Nishiki, Naka Ward, Nagoya, Aichi 460-8608日本",
+    lat: 35.1688833869491,
+    lng: 136.895992428721,
+    googleMapUrl: "https://maps.app.goo.gl/PP7TLUBZrhFaDHEs8",
+    teams: ["網球"],
+    note: ""
+  },
+  {
+    id: 8,
+    hotelName: "名古屋萬豪Associa酒店",
+    address: "1 Chome-1-4 Meieki, Nakamura Ward, Nagoya, Aichi 450-6002日本",
+    lat: 35.1710953408597,
+    lng: 136.883892787647,
+    googleMapUrl: "https://maps.app.goo.gl/Fm68VTLPrRVkNfHm9",
+    teams: ["排球(男、女)"],
+    note: ""
+  },
+  {
+    id: 9,
+    hotelName: "名鐵格蘭飯店",
+    address: "日本〒450-0002 Aichi, Nagoya, Nakamura Ward, Meieki, 1 Chome−2−4 名鉄バスターミナルビル １１階～１８階",
+    lat: 35.1686108231064,
+    lng: 136.885107830141,
+    googleMapUrl: "https://maps.app.goo.gl/W7LYojWaMn8N3YA29",
+    teams: ["排球(男、女)"],
+    note: ""
+  },
+  {
+    id: 10,
+    hotelName: "中部國際機場東橫INN 1",
+    address: "4 Chome-2-5 Centrair, Tokoname, Aichi 479-0881日本",
+    lat: 34.8617340108013,
+    lng: 136.819266842653,
+    googleMapUrl: "https://maps.app.goo.gl/2rKqFQ7L6fU2aMon8",
+    teams: ["電子競技"],
+    note: ""
+  },
+  {
+    id: 11,
+    hotelName: "中部國際機場東橫INN 2",
+    address: "4 Chome-2-5 Centrair, Tokoname, Aichi 479-0881日本",
+    lat: 34.8628497519571,
+    lng: 136.819130256517,
+    googleMapUrl: "https://maps.app.goo.gl/oLjhbyb8z4nXJSrt6",
+    teams: ["田徑", "霹靂舞", "電子競技", "滑板"],
+    note: ""
+  },
+  {
+    id: 12,
+    hotelName: "中部國際機場福朋喜來登酒店",
+    address: "4 Chome-10-5 Centrair, Tokoname, Aichi 479-0881日本",
+    lat: 34.8618188684882,
+    lng: 136.818294327996,
+    googleMapUrl: "https://maps.app.goo.gl/kQkTWkY8N7qyvmFV9",
+    teams: ["擊劍"],
+    note: ""
+  },
+  {
+    id: 13,
+    hotelName: "Federation of All Toyota Workers' Unions Training Center",
+    address: "日本〒470-0431 Aichi, Toyota, Nishinakayamacho, Shimizuguchi−133 つどいの丘",
+    lat: 35.1685462655687,
+    lng: 137.192488969065,
+    googleMapUrl: "https://maps.app.goo.gl/snu9EsPzfEj1StAcA",
+    teams: ["輕艇激流"],
+    note: ""
+  },
+  {
+    id: 14,
+    hotelName: "明山莊日式旅館",
+    address: "Tobikake-14-1 Miyacho, Gamagori, Aichi 443-0021日本",
+    lat: 34.8073569692177,
+    lng: 137.256760474794,
+    googleMapUrl: "https://maps.app.goo.gl/hV3Dr5TtaREith8H9",
+    teams: ["拳擊"],
+    note: ""
+  },
+  {
+    id: 15,
+    hotelName: "Gamagori Hotel",
+    address: "2 Chome-82 Miyakitadori, Gamagori, Aichi 443-0022日本",
+    lat: 34.8215122176799,
+    lng: 137.253823349782,
+    googleMapUrl: "https://maps.app.goo.gl/i9DMGm8FdvKUo6eA7",
+    teams: ["拳擊"],
+    note: ""
+  },
+  {
+    id: 16,
+    hotelName: "Hotel Route-Inn Shinshiro",
+    address: "25-12 Matoba, Shinshiro, Aichi 441-1375日本",
+    lat: 34.9240308787612,
+    lng: 137.663533223594,
+    googleMapUrl: "https://maps.app.goo.gl/Bp6UwNR7nNNCxbvp8",
+    teams: ["自由車(公路)"],
+    note: ""
+  },
+  {
+    id: 17,
+    hotelName: "豐橋遙索爾酒店",
+    address: "141 Fujisawacho, Toyohashi, Aichi 441-8061日本",
+    lat: 34.7435863816649,
+    lng: 137.371619455201,
+    googleMapUrl: "https://maps.app.goo.gl/FmivYS8hiQTgxDzs8",
+    teams: ["空手道", "跆拳道"],
+    note: ""
+  },
+  {
+    id: 18,
+    hotelName: "Henn na Hotel Laguna Ten Bosch",
+    address: "1 Chome-4-1 Kaiyocho, Gamagori, Aichi 443-0014日本",
+    lat: 34.8072740822147,
+    lng: 137.268446011588,
+    googleMapUrl: "https://maps.app.goo.gl/JUmjB5z9LGjmuYtTA",
+    teams: ["帆船"],
+    note: ""
+  },
+];
+
+/* =========================================================
+   比賽場館資料陣列（範例資料，待正式資料確認後替換）
+
+   欄位說明：
+   id            : 唯一識別碼（請勿重複）
+   venueName     : 場館名稱
+   address       : 場館地址
+   lat, lng      : 座標（必填）
+   googleMapUrl  : Google Maps 連結
+   sports        : 比賽運動項目，陣列格式，例如 ["羽球"]
+   note          : 備註
+========================================================= */
+const venues = [
+  {
+    id: 1,
+    venueName: "岡崎中央綜合公園多目的廣場",
+    address: "Obora Horacho, Okazaki, Aichi 444-0008日本",
+    lat: 34.9471072596199,
+    lng: 137.208954781197,
+    googleMapUrl: "https://maps.app.goo.gl/tfy9BqGffLymNBzn7",
+    sports: ["射箭"],
+    note: "反曲弓／複合弓"
+  },
+  {
+    id: 2,
+    venueName: "金城埠頭站前廣場會場",
+    address: "2 Chome-7番 Kinjofuto, Minato Ward, Nagoya, Aichi 455-0848日本",
+    lat: 35.0491159507601,
+    lng: 136.847161866103,
+    googleMapUrl: "https://maps.app.goo.gl/UrGUvNpviTdNWBdz5",
+    sports: ["3x3籃球"],
+    note: ""
+  },
+  {
+    id: 3,
+    venueName: "三好池輕艇競賽場",
+    address: "Higashiyama-209-1 Miyoshicho, Miyoshi, Aichi 470-0224日本",
+    lat: 35.0890583443312,
+    lng: 137.09192799977,
+    googleMapUrl: "https://maps.app.goo.gl/t1r8PoEqpyso3J3i9",
+    sports: ["輕艇競速"],
+    note: ""
+  },
+  {
+    id: 4,
+    venueName: "名古屋市稻永體育中心",
+    address: "5 Chome-1-10 Noseki, Minato Ward, Nagoya, Aichi 455-0845日本",
+    lat: 35.0799725719546,
+    lng: 136.849318844259,
+    googleMapUrl: "https://maps.app.goo.gl/tKBBtW9NwkEXREts5",
+    sports: ["綜合格鬥", "角力"],
+    note: ""
+  },
+  {
+    id: 5,
+    venueName: "名古屋市綜合體育館［Rainbow Hall］",
+    address: "5 Chome-1-16 Higashimatabeecho, Minami Ward, Nagoya, Aichi 457-0833日本",
+    lat: 35.0985869373413,
+    lng: 136.923675099653,
+    googleMapUrl: "https://maps.app.goo.gl/zBM33BGSNN5Lc5Pa6",
+    sports: ["體操"],
+    note: "競技/韻律"
+  },
+  {
+    id: 6,
+    venueName: "愛知國際體育館",
+    address: "1 Chome-2-2 Meijo, Kita Ward, Nagoya, Aichi 462-0846日本",
+    lat: 35.1901041519846,
+    lng: 136.902681043476,
+    googleMapUrl: "https://maps.app.goo.gl/JEsLkUzzbyPBkxgh6",
+    sports: ["柔道", "籃球"],
+    note: ""
+  },
+  {
+    id: 7,
+    venueName: "東海市民體育館",
+    address: "Masugata-1-1 Takayokosukamachi, Tokai, Aichi 477-0037日本",
+    lat: 35.0153198783861,
+    lng: 136.88437251703,
+    googleMapUrl: "https://maps.app.goo.gl/nPhdFa3UpWVxCHSy8",
+    sports: ["卡巴迪"],
+    note: ""
+  },
+  {
+    id: 8,
+    venueName: "長良川國際划船競賽場",
+    address: "940-1 Kaizucho Nagase, Kaizu, Gifu 503-0614日本",
+    lat: 35.1822862686612,
+    lng: 136.671328559118,
+    googleMapUrl: "https://maps.app.goo.gl/qKYWaPnbcnpRdoh56",
+    sports: ["划船"],
+    note: ""
+  },
+  {
+    id: 9,
+    venueName: "豐田天空廳",
+    address: "豐田市八幡町1-20",
+    lat: 35.0814767456224,
+    lng: 137.163242333966,
+    googleMapUrl: "https://maps.app.goo.gl/dFJCm5D5SeLX9f2z6",
+    sports: ["桌球"],
+    note: ""
+  },
+  {
+    id: 10,
+    venueName: "名古屋市中小企業振興會館",
+    address: "愛知縣名古屋市千種區吹上2丁目6-3",
+    lat: 35.1582743394541,
+    lng: 136.92972902827,
+    googleMapUrl: "https://maps.app.goo.gl/jkQa8tkfaXxiUTMq7",
+    sports: ["舉重"],
+    note: ""
+  },
+  {
+    id: 11,
+    venueName: "愛知縣武道館",
+    address: "455-0078 愛知縣名古屋市港區丸池町 1-1-4",
+    lat: 35.1176444179729,
+    lng: 136.869846962459,
+    googleMapUrl: "https://maps.app.goo.gl/bqHJ16JV7jGSZ8Pe9",
+    sports: ["武術", "柔術", "克拉術"],
+    note: ""
+  },
+  {
+    id: 12,
+    venueName: "安城市綜合運動公園壘球場",
+    address: "Shinjo Shindencho, Anjo, Aichi 446-0061日本",
+    lat: 34.9726522809943,
+    lng: 137.09161939806,
+    googleMapUrl: "https://maps.app.goo.gl/4EREYbPEvcyXj88C9",
+    sports: ["壘球"],
+    note: ""
+  },
+  {
+    id: 13,
+    venueName: "小幡綠地公園登山車賽道",
+    address: "1 Chome Omorikita, Moriyama Ward, Nagoya, Aichi 463-0802日本",
+    lat: 35.218213611744,
+    lng: 136.999058369728,
+    googleMapUrl: "https://maps.app.goo.gl/jiGzcuXpx5tSdGsi6",
+    sports: ["自由車（登山）"],
+    note: ""
+  },
+  {
+    id: 14,
+    venueName: "一宮市綜合體育館",
+    address: "日本〒491-0135 Aichi, Ichinomiya, Komyoji, 白山前20",
+    lat: 35.359766763788,
+    lng: 136.803220933867,
+    googleMapUrl: "https://maps.app.goo.gl/GJ4rKTCfJ7jjFnZM8",
+    sports: ["羽球"],
+    note: ""
+  },
+  {
+    id: 15,
+    venueName: "春日井鄉村俱樂部東球場",
+    address: "1071 Saiocho, Kasugai, Aichi 480-0302日本",
+    lat: 35.3287699544572,
+    lng: 137.034060024257,
+    googleMapUrl: "https://maps.app.goo.gl/HsJnS54cRswQEABY7",
+    sports: ["高爾夫"],
+    note: ""
+  },
+  {
+    id: 16,
+    venueName: "名古屋市東山公園網球中心",
+    address: "Urayama-60-19 Tenpakucho Oaza Yagoto, Tempaku Ward, Nagoya, Aichi 468-0071日本",
+    lat: 35.1479180895597,
+    lng: 136.973408718045,
+    googleMapUrl: "https://maps.app.goo.gl/ntvgNQNzaeThCFXU9",
+    sports: ["網球", "軟式網球"],
+    note: ""
+  },
+  {
+    id: 17,
+    venueName: "岡崎中央綜合公園體育館",
+    address: "愛知県岡崎市高隆寺町字峠1番地",
+    lat: 34.9474933912651,
+    lng: 137.212114096213,
+    googleMapUrl: "https://maps.app.goo.gl/LQvHqQhKd1KTY2UZA",
+    sports: ["排球A"],
+    note: ""
+  },
+  {
+    id: 18,
+    venueName: "小牧公園體育館",
+    address: "愛知県小牧市間々原新田737番地",
+    lat: 35.3066549033093,
+    lng: 136.921836251405,
+    googleMapUrl: "https://maps.app.goo.gl/XysUbsaCDH9atapYA",
+    sports: ["排球B"],
+    note: ""
+  },
+  {
+    id: 19,
+    venueName: "名古屋市瑞穗公園陸上競技場",
+    address: "5 Chome-1 Yamashitatori, Mizuho Ward, Nagoya, Aichi 467-0062日本",
+    lat: 35.1231040548465,
+    lng: 136.944331511184,
+    googleMapUrl: "https://maps.app.goo.gl/CiP7LzDQMd3qdwk58",
+    sports: ["田徑"],
+    note: ""
+  },
+  {
+    id: 20,
+    venueName: "愛知國際展示場",
+    address: "5 Chome-10番1号 Centrair, Tokoname, Aichi 479-0881日本",
+    lat: 34.8567088256777,
+    lng: 136.819831314958,
+    googleMapUrl: "https://maps.app.goo.gl/XKhrHh3r5AWjiW42A",
+    sports: ["霹靂舞", "電競", "擊劍", "滑板", "自由車(BMX自由式)"],
+    note: ""
+  },
+  {
+    id: 21,
+    venueName: "矢作川輕艇激流競賽場",
+    address: "Sakaguchi Ikejimacho, Toyota, Aichi 444-2824日本",
+    lat: 35.2045307488574,
+    lng: 137.309559837595,
+    googleMapUrl: "https://maps.app.goo.gl/9eZoFBhTzWqzWYDe8",
+    sports: ["輕艇激流"],
+    note: ""
+  },
+  {
+    id: 22,
+    venueName: "愛知縣綜合射擊場",
+    address: "Unebata-12-95 Urenocho, Toyota, Aichi 444-3203日本",
+    lat: 35.0564175318128,
+    lng: 137.425877406503,
+    googleMapUrl: "https://maps.app.goo.gl/HEDGoPn3YJSLHayTA",
+    sports: ["射擊"],
+    note: "步槍／手槍／飛靶"
+  },
+  {
+    id: 23,
+    venueName: "蒲郡市鐵人三項會場",
+    address: "日本〒443-0035 Aichi, Gamagori, Sakaemachi, 3−30 市民会館 2F",
+    lat: 34.8221965300095,
+    lng: 137.221367511923,
+    googleMapUrl: "https://maps.app.goo.gl/fkRGAJD3mVBXQoCz7",
+    sports: ["鐵人三項"],
+    note: ""
+  },
+  {
+    id: 24,
+    venueName: "太平洋長灘（愛知縣田原市）",
+    address: "〒441-3501, Nagasawa-137 Akabanechō, Tahara, Aichi 441-3502日本",
+    lat: 34.6150218864275,
+    lng: 137.218145772871,
+    googleMapUrl: "https://maps.app.goo.gl/bH6uPN4UAhVDZvuv9",
+    sports: ["衝浪"],
+    note: ""
+  },
+  {
+    id: 25,
+    venueName: "西尾市綜合體育館",
+    address: "Daigo-1-1 Ojimacho, Nishio, Aichi 445-0006日本",
+    lat: 34.897967325331,
+    lng: 137.084272206715,
+    googleMapUrl: "https://maps.app.goo.gl/dXKEuN2KRXSWuujV8",
+    sports: ["拳擊"],
+    note: ""
+  },
+  {
+    id: 26,
+    venueName: "豐橋市綜合體育館",
+    address: "Menowari-1-3 Jinnoshindencho, Toyohashi, Aichi 441-8077日本",
+    lat: 34.7582119066612,
+    lng: 137.324832659648,
+    googleMapUrl: "https://maps.app.goo.gl/K91Wp4fmBezCuNSt5",
+    sports: ["空手道", "跆拳道"],
+    note: ""
+  },
+  {
+    id: 27,
+    venueName: "海陽遊艇港",
+    address: "1 Chome-７ Kaiyocho, Gamagori, Aichi 443-0014日本",
+    lat: 34.8064393497087,
+    lng: 137.268022576353,
+    googleMapUrl: "https://maps.app.goo.gl/jL2K3BcjxULexBFs6",
+    sports: ["帆船"],
+    note: ""
+  },
+  {
+    id: 28,
+    venueName: "新城市作手及鳳來地區",
+    address: "日本〒441-1404 Aichi, Shinshiro, Tsukudesuganuma, 東山38",
+    lat: 35.0346891195371,
+    lng: 137.468220393264,
+    googleMapUrl: "https://maps.app.goo.gl/ZKtJBdT954rgd3UD6",
+    sports: ["自由車（公路）"],
+    note: ""
+  },
+  {
+    id: 29,
+    venueName: "伊豆自行車館",
+    address: "1826番地 Ono, Izu, Shizuoka 410-2402日本",
+    lat: 35.0112623947948,
+    lng: 139.015457171251,
+    googleMapUrl: "https://maps.app.goo.gl/8d5jbWaVvD78YmA67",
+    sports: ["自由車(場地)"],
+    note: ""
+  },
+  {
+    id: 30,
+    venueName: "岡崎中央綜合公園棒球場",
+    address: "愛知県岡崎市高隆寺町字峠1番地",
+    lat: 34.9471397360546,
+    lng: 137.213881676132,
+    googleMapUrl: "https://maps.app.goo.gl/wmnqk9YYFwmiMK2H9",
+    sports: ["棒球A"],
+    note: ""
+  },
+  {
+    id: 31,
+    venueName: "豐橋市民球場",
+    address: "1-2 Iwatacho, Toyohashi, Aichi 440-0832日本",
+    lat: 34.7575908699638,
+    lng: 137.425051196323,
+    googleMapUrl: "https://maps.app.goo.gl/PzYMGF33vdwqx9mj9",
+    sports: ["棒球B"],
+    note: ""
+  },
+  {
+    id: 32,
+    venueName: "岐阜縣綠色體育場",
+    address: "6 Chome-1-4 Shimogiricho, Kakamigahara, Gifu 504-0924日本",
+    lat: 35.4134218834698,
+    lng: 136.865740347629,
+    googleMapUrl: "https://maps.app.goo.gl/Jyms65SaCyCF6B76A",
+    sports: ["曲棍球"],
+    note: ""
+  },
+  {
+    id: 33,
+    venueName: "豐田體育場",
+    address: "日本〒471-0016 Aichi, Toyota, Sengokucho, 7 Chome−２",
+    lat: 35.0847666653437,
+    lng: 137.170915196912,
+    googleMapUrl: "https://maps.app.goo.gl/KJua1RBDUkiD1SsD9",
+    sports: ["女足A"],
+    note: ""
+  },
+  {
+    id: 34,
+    venueName: "名古屋市港足球場",
+    address: "4 Chome-11-12 Noseki, Minato Ward, Nagoya, Aichi 455-0845日本",
+    lat: 35.0761479493762,
+    lng: 136.850585922387,
+    googleMapUrl: "https://maps.app.goo.gl/sMRoTRyczqeDt2qj9",
+    sports: ["女足B"],
+    note: ""
+  },
+  {
+    id: 35,
+    venueName: "刈谷波浪體育場",
+    address: "Arata-1 Tsuijicho, Kariya, Aichi 448-0011日本",
+    lat: 35.0197261717851,
+    lng: 137.011874719456,
+    googleMapUrl: "https://maps.app.goo.gl/RhVY6CL8q4U3GooT6",
+    sports: ["女足C"],
+    note: ""
+  },
+  {
+    id: 36,
+    venueName: "名古屋市瑞穗公園橄欖球場",
+    address: "愛知県名古屋市瑞穂区山下通5丁目4",
+    lat: 35.1211695014504,
+    lng: 136.942627104563,
+    googleMapUrl: "https://maps.app.goo.gl/mrxevPDUKYfrcseT7",
+    sports: ["女足D"],
+    note: ""
+  },
+  {
+    id: 37,
+    venueName: "岐阜長良川競技場",
+    address: "岐阜県岐阜市長良福光大野2675-28",
+    lat: 35.4413781773848,
+    lng: 136.76610005091499,
+    googleMapUrl: "https://maps.app.goo.gl/K1Mj3eCkEUnfsqTC8",
+    sports: ["女足E"],
+    note: ""
+  },
+  {
+    id: 38,
+    venueName: "靜岡體育場 ECOPA",
+    address: "2300-1 Aino, Fukuroi, Shizuoka 437-0031日本",
+    lat: 34.7436087816954,
+    lng: 137.970795540662,
+    googleMapUrl: "https://maps.app.goo.gl/xFPYU55AT99yE8Gu6",
+    sports: ["女足F"],
+    note: ""
+  },
+  {
+    id: 39,
+    venueName: "長居體育場",
+    address: "大阪府大阪市東住吉区長居公園1-1",
+    lat: 34.6141846283041,
+    lng: 135.518619672357,
+    googleMapUrl: "https://maps.app.goo.gl/wzdgMKqjEuMNx98H7",
+    sports: ["女足G"],
+    note: ""
+  },
+];
+
+/* =========================================================
+   中繼站資料陣列（範例資料，待正式資料確認後替換）
+
+   欄位說明：
+   id            : 唯一識別碼（請勿重複）
+   stationName   : 中繼站名稱
+   address       : 中繼站地址
+   lat, lng      : 座標（必填）
+   googleMapUrl  : Google Maps 連結
+   note          : 備註
+========================================================= */
+const relayStations = [
+  {
+    id: 1,
+    stationName: "名古屋中繼站",
+    address: "愛知県名古屋市中区錦一丁目9-1",
+    lat: 35.1705337797112,
+    lng: 136.895721486769,
+    googleMapUrl: "https://maps.app.goo.gl/gcjMwriKTFMBdDuP6",
+    note: "御園小學校"
+  },
+  {
+    id: 2,
+    stationName: "豐橋中繼站",
+    address: "豊橋市豊栄町字西531",
+    lat: 34.7006593652626,
+    lng: 137.421460481648,
+    googleMapUrl: "https://maps.app.goo.gl/44itw3Rna5y6pWJL6",
+    note: "豐橋培訓中心"
+  },
+];
+
+/* ========================= 地圖初始化 ========================= */
+const map = L.map('map', {
+  zoomControl: true
+}).setView([35.1815, 136.9066], 12); // 預設中心點：名古屋
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+/* ========================= 圖層群組（住宿 / 場館 / 中繼站） ========================= */
+const accommodationLayer = L.layerGroup().addTo(map); // 預設開啟
+const venueLayer = L.layerGroup();       // 預設關閉
+const relayLayer = L.layerGroup();       // 預設關閉
+
+/* ========================= Marker 樣式（依圖層區分顏色） ========================= */
+function createDivIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      width: 18px;
+      height: 18px;
+      border-radius: 50% 50% 50% 0;
+      background: ${color};
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      transform: rotate(-45deg);
+    "></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 18],
+    popupAnchor: [0, -18]
+  });
+}
+
+const accommodationIcon = createDivIcon('#2c4066'); // 深藍 —— 住宿地點
+const venueIcon = createDivIcon('#c0392b');          // 紅色 —— 比賽場館
+const relayIcon = createDivIcon('#1f9d55');          // 綠色 —— 中繼站
+
+// 儲存 marker 以便從清單點擊時開啟對應 popup（依圖層分別建立）
+const accommodationMarkerMap = {};
+const venueMarkerMap = {};
+const relayMarkerMap = {};
+
+function buildPopupContent(item) {
+  return `
+    <div class="popup-content">
+      <div class="popup-title">${item.hotelName}</div>
+      <table>
+        <tr><td class="label">地址</td><td>${item.address}</td></tr>
+        <tr><td class="label">入住代表隊</td><td>${item.teams.join('、')}</td></tr>
+        <tr><td class="label">備註</td><td>${item.note}</td></tr>
+      </table>
+      <a class="popup-gmap-link" href="${item.googleMapUrl}" target="_blank" rel="noopener noreferrer">開啟 Google Maps ↗</a>
+    </div>
+  `;
+}
+
+accommodations.forEach(item => {
+  const marker = L.marker([item.lat, item.lng], { icon: accommodationIcon });
+  marker.bindPopup(buildPopupContent(item));
+  marker.on('click', () => setActiveListItem('accommodation', item.id));
+  marker.addTo(accommodationLayer);
+  accommodationMarkerMap[item.id] = marker;
+});
+
+/* ========================= 比賽場館 Marker ========================= */
+function buildVenuePopupContent(item) {
+  return `
+    <div class="popup-content popup-venue">
+      <div class="popup-title">${item.venueName}</div>
+      <table>
+        <tr><td class="label">地址</td><td>${item.address}</td></tr>
+        <tr><td class="label">運動項目</td><td>${item.sports.join('、')}</td></tr>
+        <tr><td class="label">備註</td><td>${item.note}</td></tr>
+      </table>
+      <a class="popup-gmap-link" href="${item.googleMapUrl}" target="_blank" rel="noopener noreferrer">開啟 Google Maps ↗</a>
+    </div>
+  `;
+}
+
+venues.forEach(item => {
+  const marker = L.marker([item.lat, item.lng], { icon: venueIcon });
+  marker.bindPopup(buildVenuePopupContent(item));
+  marker.on('click', () => setActiveListItem('venue', item.id));
+  marker.addTo(venueLayer);
+  venueMarkerMap[item.id] = marker;
+});
+
+/* ========================= 中繼站 Marker ========================= */
+function buildRelayPopupContent(item) {
+  return `
+    <div class="popup-content popup-relay">
+      <div class="popup-title">${item.stationName}</div>
+      <table>
+        <tr><td class="label">地址</td><td>${item.address}</td></tr>
+        <tr><td class="label">備註</td><td>${item.note}</td></tr>
+      </table>
+      <a class="popup-gmap-link" href="${item.googleMapUrl}" target="_blank" rel="noopener noreferrer">開啟 Google Maps ↗</a>
+    </div>
+  `;
+}
+
+relayStations.forEach(item => {
+  const marker = L.marker([item.lat, item.lng], { icon: relayIcon });
+  marker.bindPopup(buildRelayPopupContent(item));
+  marker.on('click', () => setActiveListItem('relay', item.id));
+  marker.addTo(relayLayer);
+  relayMarkerMap[item.id] = marker;
+});
+
+/* ========================= 圖層開關控制面板 ========================= */
+const LayerControl = L.Control.extend({
+  options: { position: 'topright' },
+  onAdd: function () {
+    const container = L.DomUtil.create('div', 'layer-control');
+    container.innerHTML = `
+      <div class="layer-control-title">圖層顯示</div>
+      <label><input type="checkbox" id="toggle-accommodation" checked><span class="swatch accommodation"></span>住宿地點</label>
+      <label><input type="checkbox" id="toggle-venue"><span class="swatch venue"></span>比賽場館</label>
+      <label><input type="checkbox" id="toggle-relay"><span class="swatch relay"></span>中繼站</label>
+    `;
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.disableScrollPropagation(container);
+    return container;
+  }
+});
+map.addControl(new LayerControl());
+
+document.getElementById('toggle-accommodation').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    map.addLayer(accommodationLayer);
+  } else {
+    map.removeLayer(accommodationLayer);
+  }
+});
+
+document.getElementById('toggle-venue').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    map.addLayer(venueLayer);
+  } else {
+    map.removeLayer(venueLayer);
+  }
+});
+
+document.getElementById('toggle-relay').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    map.addLayer(relayLayer);
+  } else {
+    map.removeLayer(relayLayer);
+  }
+});
+
+/* ========================= 左側清單渲染（依分頁切換 住宿 / 場館 / 中繼站） ========================= */
+const listEl = document.getElementById('accommodation-list');
+const listTitleEl = document.getElementById('list-title');
+const listCountEl = document.getElementById('list-count');
+const tabButtons = document.querySelectorAll('#sidebar-tabs button');
+
+// 各分頁設定：資料來源、圖層、markerMap、標題文字、清單卡片渲染方式
+const tabConfig = {
+  accommodation: {
+    title: '住宿地點清單',
+    data: accommodations,
+    layer: accommodationLayer,
+    toggleId: 'toggle-accommodation',
+    markerMap: accommodationMarkerMap,
+    renderItem: item => `
+      <div class="item-name">${item.hotelName}</div>
+      <div class="item-sport">${item.teams.join('、')}</div>
+      <div class="item-address">${item.address}</div>
+    `
+  },
+  venue: {
+    title: '比賽場館清單',
+    data: venues,
+    layer: venueLayer,
+    toggleId: 'toggle-venue',
+    markerMap: venueMarkerMap,
+    renderItem: item => `
+      <div class="item-name">${item.venueName}</div>
+      <div class="item-sport tag-venue">${item.sports.join('、')}</div>
+      <div class="item-address">${item.address}</div>
+    `
+  },
+  relay: {
+    title: '中繼站清單',
+    data: relayStations,
+    layer: relayLayer,
+    toggleId: 'toggle-relay',
+    markerMap: relayMarkerMap,
+    renderItem: item => `
+      <div class="item-name">${item.stationName}</div>
+      <div class="item-sport tag-relay">${item.note || '中繼站'}</div>
+      <div class="item-address">${item.address}</div>
+    `
+  }
+};
+
+let activeTab = 'accommodation'; // 預設顯示住宿地點
+
+function renderList(tab) {
+  activeTab = tab;
+  const config = tabConfig[tab];
+
+  // 更新分頁按鈕外觀
+  tabButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+
+  // 更新標題與筆數
+  listTitleEl.textContent = config.title;
+  listCountEl.textContent = `共 ${config.data.length} 筆`;
+
+  // 切到「比賽場館」或「中繼站」分頁時，若該圖層尚未開啟則自動開啟；不強制關閉其他圖層
+  if (tab !== 'accommodation' && !map.hasLayer(config.layer)) {
+    map.addLayer(config.layer);
+    const toggleEl = document.getElementById(config.toggleId);
+    if (toggleEl) toggleEl.checked = true;
+  }
+
+  // 重繪清單
+  listEl.innerHTML = '';
+  config.data.forEach(item => {
+    const li = document.createElement('li');
+    li.dataset.id = item.id;
+    li.innerHTML = config.renderItem(item);
+    li.addEventListener('click', () => {
+      if (!map.hasLayer(config.layer)) {
+        map.addLayer(config.layer);
+        const toggleEl = document.getElementById(config.toggleId);
+        if (toggleEl) toggleEl.checked = true;
+      }
+      map.flyTo([item.lat, item.lng], 15, { duration: 0.8 });
+      config.markerMap[item.id].openPopup();
+      setActiveListItem(tab, item.id);
+    });
+    listEl.appendChild(li);
+  });
+}
+
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => renderList(btn.dataset.tab));
+});
+
+function setActiveListItem(tab, id) {
+  // 若目前顯示的分頁與 marker 所屬分頁不同，先切換清單分頁再標記選取項目
+  if (activeTab !== tab) {
+    renderList(tab);
+  }
+  document.querySelectorAll('#accommodation-list li').forEach(li => {
+    li.classList.toggle('active', Number(li.dataset.id) === Number(id));
+  });
+}
+
+// 初始渲染：預設顯示「住宿地點」清單
+renderList('accommodation');
+</script>
+
+</body>
+</html>
