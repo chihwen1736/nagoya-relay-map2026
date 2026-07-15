@@ -135,6 +135,11 @@
     border-bottom-color: #1f9d55;
   }
 
+  /* 分頁按鈕筆數標籤：桌機版隱藏，僅在手機版（見下方 media query）顯示 */
+  #sidebar-tabs button .tab-count {
+    display: none;
+  }
+
   #accommodation-list {
     list-style: none;
     margin: 0;
@@ -354,10 +359,10 @@
       font-size: 10px;
     }
 
-    /* main 改為垂直排列，並允許整體垂直捲動 */
+    /* main 改為垂直排列；地圖固定比例、清單於剩餘空間內自行捲動 */
     main {
       flex-direction: column;
-      overflow-y: auto;
+      overflow-y: auto; /* 極端情況（如短螢幕橫向）仍可整體捲動，一般情況下不會觸發 */
       -webkit-overflow-scrolling: touch;
     }
 
@@ -379,11 +384,24 @@
       font-size: 14px;
     }
 
+    /* 分頁按鈕加上筆數標籤，僅在手機版顯示，不影響桌機版文字 */
+    #sidebar-tabs button .tab-count {
+      display: inline;
+      font-size: 11.5px;
+      color: var(--text-sub);
+      margin-left: 2px;
+    }
+
+    #sidebar-tabs button.active .tab-count {
+      color: var(--navy-light);
+    }
+
+    /* 地圖為主要視覺，約佔畫面 60% 高度 */
     #map {
       order: 2;
-      flex: 0 0 47vh;
+      flex: 0 0 60vh;
       width: 100%;
-      min-height: 47vh;
+      min-height: 60vh;
     }
 
     .sidebar-header {
@@ -391,10 +409,25 @@
       flex-shrink: 0;
     }
 
+    /* 資訊清單：約佔剩餘 40% 空間，內容過長時於清單內部自行捲動 */
     #accommodation-list {
       order: 4;
-      flex: none;
-      overflow-y: visible;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* 手風琴（Accordion）預設收合：分頁標題與清單預設隱藏，
+       點擊對應分頁按鈕後才展開，由 JavaScript 切換 display */
+    .sidebar-header,
+    #accommodation-list {
+      display: none;
+    }
+
+    .sidebar-header.mobile-expanded,
+    #accommodation-list.mobile-expanded {
+      display: block;
     }
 
     /* 資訊卡（手機版）尺寸加大，方便觸控閱讀 */
@@ -478,9 +511,9 @@
   <main>
     <aside id="sidebar">
       <div id="sidebar-tabs">
-        <button type="button" data-tab="accommodation" class="active">住宿地點</button>
-        <button type="button" data-tab="venue">比賽場館</button>
-        <button type="button" data-tab="relay">中繼站</button>
+        <button type="button" data-tab="accommodation" class="active">住宿地點<span class="tab-count"></span></button>
+        <button type="button" data-tab="venue">比賽場館<span class="tab-count"></span></button>
+        <button type="button" data-tab="relay">中繼站<span class="tab-count"></span></button>
       </div>
       <div class="sidebar-header">
         <span id="list-title">住宿地點清單</span> <span class="count" id="list-count"></span>
@@ -1337,6 +1370,26 @@ const tabConfig = {
 
 let activeTab = 'accommodation'; // 預設顯示住宿地點
 
+// 手機版（RWD）判斷與手風琴（Accordion）展開狀態
+// 僅影響手機版的清單顯示方式，桌機版邏輯與版面完全不受影響
+function isMobileView() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+let mobileAccordionExpanded = false; // 手機版預設收合
+
+// 依手機/桌機情境切換清單（含標題列）的顯示狀態
+// 桌機版一律維持顯示，不受此狀態影響
+function setMobileListVisibility(expanded) {
+  const headerEl = document.querySelector('.sidebar-header');
+  if (!isMobileView()) {
+    if (headerEl) headerEl.classList.remove('mobile-expanded');
+    listEl.classList.remove('mobile-expanded');
+    return;
+  }
+  if (headerEl) headerEl.classList.toggle('mobile-expanded', expanded);
+  listEl.classList.toggle('mobile-expanded', expanded);
+}
+
 function renderList(tab) {
   activeTab = tab;
   const config = tabConfig[tab];
@@ -1369,16 +1422,52 @@ function renderList(tab) {
         const toggleEl = document.getElementById(config.toggleId);
         if (toggleEl) toggleEl.checked = true;
       }
-      map.flyTo([item.lat, item.lng], 15, { duration: 0.8 });
-      config.markerMap[item.id].openPopup();
-      setActiveListItem(tab, item.id);
+
+      const flyAndOpenPopup = () => {
+        map.flyTo([item.lat, item.lng], 15, { duration: 0.8 });
+        config.markerMap[item.id].openPopup();
+      };
+
+      if (isMobileView()) {
+        // 手機版：先平滑捲動到地圖，捲動完成後再定位並開啟 Popup
+        const mapEl = document.getElementById('map');
+        if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.setTimeout(flyAndOpenPopup, 450);
+      } else {
+        // 桌機版：維持原有行為，不受影響
+        flyAndOpenPopup();
+      }
+
+      setActiveListItem(tab, item.id); // 保留清單高亮（active）效果
     });
     listEl.appendChild(li);
   });
 }
 
+// 分頁按鈕上顯示各分類筆數（例如：住宿地點（18））
+// 桌機版此標籤透過 CSS 隱藏，不影響桌機版文字與版面
+Object.keys(tabConfig).forEach(tab => {
+  const btn = document.querySelector(`#sidebar-tabs button[data-tab="${tab}"]`);
+  const countSpan = btn ? btn.querySelector('.tab-count') : null;
+  if (countSpan) {
+    countSpan.textContent = `（${tabConfig[tab].data.length}）`;
+  }
+});
+
 tabButtons.forEach(btn => {
-  btn.addEventListener('click', () => renderList(btn.dataset.tab));
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    if (isMobileView()) {
+      // 手機版：手風琴行為 — 點選同一個已展開的分頁會收合；點選其他分頁則切換並展開
+      const willExpand = !(mobileAccordionExpanded && activeTab === tab);
+      renderList(tab);
+      mobileAccordionExpanded = willExpand;
+      setMobileListVisibility(willExpand);
+    } else {
+      // 桌機版：維持原有行為，清單一律顯示
+      renderList(tab);
+    }
+  });
 });
 
 function setActiveListItem(tab, id) {
@@ -1393,6 +1482,14 @@ function setActiveListItem(tab, id) {
 
 // 初始渲染：預設顯示「住宿地點」清單
 renderList('accommodation');
+
+// 手機版預設收合資訊清單（節省畫面空間）；桌機版不受影響，清單維持顯示
+setMobileListVisibility(false);
+
+// 若使用者旋轉螢幕或調整視窗跨越手機/桌機的版面門檻，重新套用正確的顯示狀態
+window.addEventListener('resize', () => {
+  setMobileListVisibility(mobileAccordionExpanded);
+});
 </script>
 
 </body>
