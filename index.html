@@ -92,6 +92,11 @@
     white-space: nowrap;
   }
 
+  /* 第二行單位提醒文字：桌機顯示原文字，手機顯示精簡版（by media query 切換） */
+  .internal-use-mobile {
+    display: none;
+  }
+
   main {
     flex: 1;
     display: flex;
@@ -122,6 +127,54 @@
     font-weight: 400;
     font-size: 12px;
   }
+
+  /* 頁籤內搜尋框：位於清單標題與資料清單之間 */
+  #search-container {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-bg);
+    flex-shrink: 0;
+  }
+
+  #search-container input#list-search {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: var(--text-main);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    outline: none;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  #search-container input#list-search::placeholder {
+    color: var(--text-sub);
+  }
+
+  #search-container input#list-search:focus {
+    border-color: var(--navy-light);
+    box-shadow: 0 0 0 3px rgba(44, 64, 102, 0.12);
+  }
+
+  /* 清單無符合結果時的提示文字（為 <li> 元素，覆寫預設清單項目樣式） */
+  #accommodation-list li.list-empty {
+    padding: 20px 18px;
+    text-align: center;
+    color: var(--text-sub);
+    font-size: 13px;
+    cursor: default;
+    border-bottom: none;
+  }
+
+  #accommodation-list li.list-empty:hover {
+    background: none;
+  }
+
 
   /* 左側清單分頁按鈕 */
   #sidebar-tabs {
@@ -437,25 +490,35 @@
       display: block;
     }
 
-    /* 手機版：單位資訊移至標題下方，加上分隔線，不壓縮主標題、不造成左右滑動 */
+    /* 手機版：單位資訊移至標題下方，靠右對齊，加上分隔線，不壓縮主標題、不造成左右滑動 */
     header .org-info {
-      margin-top: 7px;
+      width: 100%;
+      margin-top: 6px;
       margin-left: 0;
-      padding-top: 7px;
+      padding-top: 6px;
+      text-align: right;
       border-top: 1px solid rgba(255, 255, 255, 0.15);
-      text-align: left;
     }
 
     header .org-tag {
-      font-size: 12px;
-      line-height: 1.4;
+      font-size: 10px;
+      line-height: 1.35;
       white-space: normal;
     }
 
     header .internal-use {
-      margin-top: 2px;
-      font-size: 10.5px;
-      line-height: 1.4;
+      margin-top: 1px;
+      font-size: 9px;
+      line-height: 1.35;
+      white-space: normal;
+    }
+
+    .internal-use-desktop {
+      display: none;
+    }
+
+    .internal-use-mobile {
+      display: block;
     }
 
     /* #app 改為自然頁面高度，讓整體內容（含清單）可以自然向下捲動，
@@ -506,17 +569,29 @@
       flex-shrink: 0;
     }
 
+    /* 搜尋框：位於清單標題下方、資料清單上方 */
+    #search-container {
+      order: 3;
+      flex-shrink: 0;
+      padding: 10px 14px;
+    }
+
+    #search-container input#list-search {
+      height: 40px;
+      font-size: 14px;
+    }
+
     /* 資訊清單為手機版主要操作區域（清單優先）：不設定固定高度、不裁切，
        內容隨頁面自然向下捲動，預設即完整顯示（不收合） */
     #accommodation-list {
-      order: 3;
+      order: 4;
       flex: none;
       overflow: visible;
     }
 
     /* 地圖放在清單下方，高度約畫面 48%，並設定合理的最小／最大高度 */
     #map {
-      order: 4;
+      order: 5;
       flex: none;
       width: 100%;
       height: 48vh;
@@ -595,10 +670,22 @@
     }
 
     footer {
-      padding: 9px 12px;
-      font-size: 10.5px;
-      line-height: 1.55;
+      padding: 8px 10px;
       text-align: center;
+      line-height: 1.4;
+    }
+
+    .footer-mobile > div + div {
+      margin-top: 2px;
+    }
+
+    .footer-source {
+      font-size: 9px;
+    }
+
+    .footer-updated,
+    .footer-maintainer {
+      font-size: 10px;
     }
   }
 </style>
@@ -614,7 +701,8 @@
     </div>
     <div class="org-info">
       <div class="org-tag">國家運動訓練中心｜競技運動處</div>
-      <div class="internal-use">此資料為內部參考使用</div>
+      <div class="internal-use internal-use-desktop">此資料為內部參考使用</div>
+      <div class="internal-use internal-use-mobile">資料僅供內部作業使用</div>
     </div>
   </header>
 
@@ -629,6 +717,14 @@
       <div class="sidebar-header">
         <span id="list-title">住宿地點清單</span> <span class="count" id="list-count"></span>
       </div>
+      <div id="search-container">
+        <input
+          type="search"
+          id="list-search"
+          placeholder="搜尋名稱、項目、地址或備註"
+          autocomplete="off"
+        >
+      </div>
       <ul id="accommodation-list"></ul>
     </aside>
 
@@ -640,10 +736,15 @@
       資料更新：<span id="footer-updated-desktop"></span>｜資料僅供內部作業參考使用，正式資料請以主辦單位公告為準｜建置與維護：國家運動訓練中心競技運動處
     </div>
     <div class="footer-mobile">
-      <div>資料更新：<span id="footer-updated-mobile"></span></div>
-      <div>資料僅供內部作業參考使用</div>
-      <div>正式資料請以主辦單位公告為準</div>
-      <div>建置與維護：國訓中心競技處</div>
+      <div class="footer-source">
+        資料來源：2026名古屋亞運籌備會，最新資訊請以官方公告為準
+      </div>
+      <div class="footer-updated">
+        資料更新：<span id="last-updated-mobile"></span>
+      </div>
+      <div class="footer-maintainer">
+        建置與維護：國家運動訓練中心競技運動處
+      </div>
     </div>
   </footer>
 </div>
@@ -655,8 +756,16 @@
 /* ========================= 資料更新日期 ========================= */
 // 唯一日期來源：頁尾文字皆由此變數動態帶入，不在多處重複手動輸入日期
 const lastUpdated = "2026年7月17日";
-document.getElementById('footer-updated-desktop').textContent = lastUpdated;
-document.getElementById('footer-updated-mobile').textContent = lastUpdated;
+
+const desktopUpdatedEl = document.getElementById('footer-updated-desktop');
+if (desktopUpdatedEl) {
+  desktopUpdatedEl.textContent = lastUpdated;
+}
+
+const mobileUpdatedEl = document.getElementById('last-updated-mobile');
+if (mobileUpdatedEl) {
+  mobileUpdatedEl.textContent = lastUpdated;
+}
 
 /* =========================================================
    中繼站資料陣列
@@ -1570,6 +1679,7 @@ const tabConfig = {
     layer: relayLayer,
     toggleId: 'toggle-relay',
     markerMap: relayMarkerMap,
+    searchText: item => [item.stationName, item.address, item.note].join(' '),
     renderItem: item => `
       <div class="item-name">${item.stationName}</div>
       ${tagHtml(item.note || '中繼站', 'tag-relay')}
@@ -1582,6 +1692,7 @@ const tabConfig = {
     layer: venueLayer,
     toggleId: 'toggle-venue',
     markerMap: venueMarkerMap,
+    searchText: item => [item.venueName, (item.sports || []).join('、'), item.address, item.note].join(' '),
     renderItem: item => `
       <div class="item-name">${item.venueName}</div>
       ${tagHtml((item.sports && item.sports.length) ? item.sports.join('、') : '', 'tag-venue')}
@@ -1594,6 +1705,7 @@ const tabConfig = {
     layer: accommodationLayer,
     toggleId: 'toggle-accommodation',
     markerMap: accommodationMarkerMap,
+    searchText: item => [item.hotelName, (item.teams || []).join('、'), item.address, item.note].join(' '),
     renderItem: item => `
       <div class="item-name">${item.hotelName}</div>
       ${tagHtml((item.teams && item.teams.length) ? item.teams.join('、') : '')}
@@ -1606,6 +1718,7 @@ const tabConfig = {
     layer: eventGroupLayer,
     toggleId: 'toggle-eventgroup',
     markerMap: eventGroupMarkerMap,
+    searchText: item => [item.hotelName, (item.teams || []).join('、'), item.address, item.note].join(' '),
     renderItem: item => `
       <div class="item-name">${item.hotelName}</div>
       ${tagHtml((item.teams && item.teams.length) ? item.teams.join('、') : '', 'tag-eventgroup')}
@@ -1622,7 +1735,7 @@ function isMobileView() {
   return window.matchMedia('(max-width: 768px)').matches;
 }
 
-function renderList(tab) {
+function renderList(tab, keyword = '') {
   activeTab = tab;
   const config = tabConfig[tab];
 
@@ -1631,9 +1744,8 @@ function renderList(tab) {
     btn.classList.toggle('active', btn.dataset.tab === tab);
   });
 
-  // 更新標題與筆數
+  // 更新標題
   listTitleEl.textContent = config.title;
-  listCountEl.textContent = `共 ${config.data.length} 筆`;
 
   // 切到「比賽場館」或「中繼站」分頁時，若該圖層尚未開啟則自動開啟；不強制關閉其他圖層
   if (tab !== 'accommodation' && !map.hasLayer(config.layer)) {
@@ -1642,9 +1754,27 @@ function renderList(tab) {
     if (toggleEl) toggleEl.checked = true;
   }
 
+  // 僅在目前頁籤內搜尋，不跨分類；不區分大小寫
+  const trimmedKeyword = (keyword || '').trim().toLowerCase();
+  const filteredData = trimmedKeyword
+    ? config.data.filter(item => config.searchText(item).toLowerCase().includes(trimmedKeyword))
+    : config.data;
+
+  // 更新筆數（依搜尋結果同步更新）
+  listCountEl.textContent = `共 ${filteredData.length} 筆`;
+
   // 重繪清單
   listEl.innerHTML = '';
-  config.data.forEach(item => {
+
+  if (filteredData.length === 0) {
+    const emptyLi = document.createElement('li');
+    emptyLi.className = 'list-empty';
+    emptyLi.textContent = '查無符合資料';
+    listEl.appendChild(emptyLi);
+    return;
+  }
+
+  filteredData.forEach(item => {
     const li = document.createElement('li');
     li.dataset.id = item.id;
     li.classList.add(`cat-${tab}`);
@@ -1693,16 +1823,28 @@ Object.keys(tabConfig).forEach(tab => {
   }
 });
 
+const searchInputEl = document.getElementById('list-search');
+
 tabButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    renderList(btn.dataset.tab);
+    // 切換頁籤時，搜尋框自動清空，恢復顯示該分類完整清單
+    if (searchInputEl) searchInputEl.value = '';
+    renderList(btn.dataset.tab, '');
   });
 });
 
+if (searchInputEl) {
+  searchInputEl.addEventListener('input', (e) => {
+    // 即時篩選目前頁籤的清單，不跨分類搜尋、不影響地圖 Marker
+    renderList(activeTab, e.target.value);
+  });
+}
+
 function setActiveListItem(tab, id) {
-  // 若目前顯示的分頁與 marker 所屬分頁不同，先切換清單分頁再標記選取項目
+  // 若目前顯示的分頁與 marker 所屬分頁不同，先切換清單分頁（並清空搜尋框）再標記選取項目
   if (activeTab !== tab) {
-    renderList(tab);
+    if (searchInputEl) searchInputEl.value = '';
+    renderList(tab, '');
   }
   document.querySelectorAll('#accommodation-list li').forEach(li => {
     li.classList.toggle('active', Number(li.dataset.id) === Number(id));
