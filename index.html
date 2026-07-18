@@ -1511,6 +1511,21 @@ function popupRow(label, value) {
   return `<tr><td class="label">${label}</td><td>${value}</td></tr>`;
 }
 
+// 產生 Google Maps 連結：優先使用經緯度組成標準搜尋網址，
+// 避免 https://maps.app.goo.gl/... 短網址在 iOS Google Maps App 出現「不支援的連結」問題；
+// 若經緯度非數字，才退回使用原本的 googleMapUrl（不修改任何資料本身）
+function buildGoogleMapsUrl(item) {
+  if (
+    typeof item.lat === 'number' &&
+    typeof item.lng === 'number'
+  ) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${item.lat},${item.lng}`
+    )}`;
+  }
+  return item.googleMapUrl || '';
+}
+
 function gmapLinkHtml(url) {
   if (!url) return '';
   return `<a class="popup-gmap-link" href="${url}" target="_blank" rel="noopener noreferrer">開啟 Google Maps ↗</a>`;
@@ -1531,7 +1546,7 @@ function buildPopupContent(item) {
         ${popupRow('入住代表隊', teamsText)}
         ${popupRow('備註', item.note)}
       </table>
-      ${gmapLinkHtml(item.googleMapUrl)}
+      ${gmapLinkHtml(buildGoogleMapsUrl(item))}
     </div>
   `;
 }
@@ -1555,7 +1570,7 @@ function buildVenuePopupContent(item) {
         ${popupRow('運動項目', sportsText)}
         ${popupRow('備註', item.note)}
       </table>
-      ${gmapLinkHtml(item.googleMapUrl)}
+      ${gmapLinkHtml(buildGoogleMapsUrl(item))}
     </div>
   `;
 }
@@ -1577,7 +1592,7 @@ function buildRelayPopupContent(item) {
         ${popupRow('地址', item.address)}
         ${popupRow('備註', item.note)}
       </table>
-      ${gmapLinkHtml(item.googleMapUrl)}
+      ${gmapLinkHtml(buildGoogleMapsUrl(item))}
     </div>
   `;
 }
@@ -1601,7 +1616,7 @@ function buildEventGroupPopupContent(item) {
         ${popupRow('入住團別', teamsText)}
         ${popupRow('備註', item.note)}
       </table>
-      ${gmapLinkHtml(item.googleMapUrl)}
+      ${gmapLinkHtml(buildGoogleMapsUrl(item))}
     </div>
   `;
 }
