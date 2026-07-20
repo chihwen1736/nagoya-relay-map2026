@@ -1579,53 +1579,66 @@ function popupRow(label, value) {
 // 未來若 Google Maps 連結規則變更，只需修改這個函式即可，
 // 不需要修改任何 Popup 或四個資料陣列。
 //
+// 取得可供人類閱讀的地點名稱（依序嘗試各分類名稱欄位，最後退回地址）
+function getLocationName(item) {
+  return (
+    item.hotelName ||
+    item.venueName ||
+    item.stationName ||
+    item.address ||
+    ''
+  );
+}
+
+// 產生 Google Maps 連結（Search URL）：只開啟指定地點頁面，不進入導航／路線規劃，
+// 不帶 origin、destination、travelmode 或目前位置；
+// 使用者可在開啟地點頁後，自行點擊「路線」進行導航。
+//
 // 優先順序：
-// ① placeId 存在 → 使用「名稱＋地址」＋ query_place_id（最精準）
-// ② 無 placeId，但名稱與地址存在 → 使用「名稱＋地址」搜尋
-// ③ 名稱或地址不存在 → 退回使用 lat,lng 座標搜尋
+// ① placeId 存在 → query 使用「名稱＋地址」＋ query_place_id（最精準）
+// ② 無 placeId，但名稱＋地址存在 → 僅用 query（名稱＋地址）
+// ③ placeId、名稱、地址皆不存在 → 才退回使用 lat,lng 作為 query
 // ④ 皆不存在 → 回傳空字串（不顯示 Google Maps 按鈕）
 //
 // 注意：item.googleMapUrl 僅保留於資料陣列作為人工備查用途，
 // 完全不參與這裡的網站導航邏輯。
 function buildGoogleMapsUrl(item) {
-  const name = item.hotelName || item.venueName || item.stationName || '';
+  const name = getLocationName(item);
   const address = item.address || '';
-  const nameAndAddress = [name, address].filter(Boolean).join(' ');
+  const query = [name, address]
+    .filter(Boolean)
+    .join(' ');
 
-  // ① Place ID 優先
   if (item.placeId) {
-    if (nameAndAddress) {
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        nameAndAddress
-      )}&query_place_id=${encodeURIComponent(item.placeId)}`;
-    }
-    // 沒有名稱／地址可組成 query，但仍有 placeId 時，退回用座標作為 query 搭配 place_id
-    if (typeof item.lat === 'number' && typeof item.lng === 'number') {
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        `${item.lat},${item.lng}`
-      )}&query_place_id=${encodeURIComponent(item.placeId)}`;
-    }
+    return (
+      'https://www.google.com/maps/search/?api=1' +
+      `&query=${encodeURIComponent(query || name || address)}` +
+      `&query_place_id=${encodeURIComponent(item.placeId)}`
+    );
   }
 
-  // ② 沒有 placeId，但名稱＋地址存在
-  if (nameAndAddress) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nameAndAddress)}`;
+  if (query) {
+    return (
+      'https://www.google.com/maps/search/?api=1' +
+      `&query=${encodeURIComponent(query)}`
+    );
   }
 
-  // ③ 名稱／地址皆不存在，退回使用經緯度
-  if (typeof item.lat === 'number' && typeof item.lng === 'number') {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      `${item.lat},${item.lng}`
-    )}`;
+  const lat = Number(item.lat);
+  const lng = Number(item.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return (
+      'https://www.google.com/maps/search/?api=1' +
+      `&query=${encodeURIComponent(`${lat},${lng}`)}`
+    );
   }
 
-  // ④ 全部不存在
   return '';
 }
 
 function gmapLinkHtml(url) {
   if (!url) return '';
-  return `<a class="popup-gmap-link" href="${url}" target="_blank" rel="noopener noreferrer">開啟 Google Maps ↗</a>`;
+  return `<a class="popup-gmap-link" href="${url}" target="_blank" rel="noopener noreferrer">在 Google Maps 查看 ↗</a>`;
 }
 
 function tagHtml(text, extraClass = '') {
