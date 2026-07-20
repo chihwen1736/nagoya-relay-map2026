@@ -775,10 +775,10 @@ if (mobileUpdatedEl) {
    stationName   : 中繼站名稱
    address       : 中繼站地址
    lat, lng      : 座標（必填）
-   googleMapUrl  : Google Maps 短網址（僅保留於資料庫作為人工備查用途，
-                    網站導航一律改用 buildGoogleMapsUrl() 動態產生連結，
-                    不直接使用此欄位）
+   googleMapUrl  : Google Maps 短網址（僅保留於資料庫作為人工備查用途，不參與導航邏輯）
    placeId       : Google Place ID（供 buildGoogleMapsUrl() 優先使用）
+   googlePlaceName : Google Maps 上的正式地點名稱（僅供 buildGoogleMapsUrl() 產生連結使用，
+                    不會取代網站畫面上的中文名稱；留空時自動退回使用網站顯示名稱）
    note          : 備註
 ========================================================= */
 const relayStations = [
@@ -790,6 +790,7 @@ const relayStations = [
     lng: 136.895721486769,
     googleMapUrl: "https://maps.app.goo.gl/gcjMwriKTFMBdDuP6",
     placeId: "ChIJbfleqdd2A2ARWzaSgsdyqwI",
+    googlePlaceName: "1-chōme-9-1 Nishiki",
     note: "御園小學校"
   },
   {
@@ -800,6 +801,7 @@ const relayStations = [
     lng: 137.421460481648,
     googleMapUrl: "https://maps.app.goo.gl/44itw3Rna5y6pWJL6",
     placeId: "ChIJGzZbTZDUBGARIAGbCnypYPo",
+    googlePlaceName: "Nishi-531 Hōeichō",
     note: "豐橋培訓中心"
   },
 ];
@@ -814,6 +816,8 @@ const relayStations = [
    lat, lng      : 座標（必填）
    googleMapUrl  : Google Maps 短網址（僅供人工備查，不參與導航邏輯）
    placeId       : Google Place ID（供 buildGoogleMapsUrl() 優先使用）
+   googlePlaceName : Google Maps 上的正式地點名稱（僅供 buildGoogleMapsUrl() 產生連結使用，
+                    不會取代網站畫面上的中文名稱；留空時自動退回使用網站顯示名稱）
    sports        : 比賽運動項目，陣列格式，例如 ["羽球"]
    note          : 備註
 ========================================================= */
@@ -826,6 +830,7 @@ const venues = [
     lng: 137.208954781197,
     googleMapUrl: "https://maps.app.goo.gl/tfy9BqGffLymNBzn7",
     placeId: "ChIJzfrGMIe8BGARUKOOECfBhZM",
+    googlePlaceName: "Okazaki Central Park Multipurpose Plaza",
     sports: ["射箭"],
     note: "反曲弓／複合弓"
   },
@@ -837,6 +842,7 @@ const venues = [
     lng: 136.849326234089,
     googleMapUrl: "https://maps.app.goo.gl/5HbaM7BKT9ALSQD16",
     placeId: "ChIJufcksch4A2AR2nmcVR5b0fM",
+    googlePlaceName: "金城埠頭車站",
     sports: ["3x3籃球"],
     note: ""
   },
@@ -848,6 +854,7 @@ const venues = [
     lng: 137.09192799977,
     googleMapUrl: "https://maps.app.goo.gl/t1r8PoEqpyso3J3i9",
     placeId: "ChIJiwwqrc5hA2ARdUJEyQtqxiQ",
+    googlePlaceName: "みよし市 三好池カヌーセンター",
     sports: ["輕艇競速"],
     note: ""
   },
@@ -859,6 +866,7 @@ const venues = [
     lng: 136.849318844259,
     googleMapUrl: "https://maps.app.goo.gl/tKBBtW9NwkEXREts5",
     placeId: "ChIJq6pqy154A2ARBVWNsNoRIWE",
+    googlePlaceName: "Inae Sports Center",
     sports: ["綜合格鬥", "角力"],
     note: ""
   },
@@ -870,6 +878,7 @@ const venues = [
     lng: 136.923675099653,
     googleMapUrl: "https://maps.app.goo.gl/zBM33BGSNN5Lc5Pa6",
     placeId: "ChIJXSQQI797A2ARTB2rtM6MJ_I",
+    googlePlaceName: "Kurokokun hall",
     sports: ["體操"],
     note: "競技/韻律"
   },
@@ -881,6 +890,7 @@ const venues = [
     lng: 136.902681043476,
     googleMapUrl: "https://maps.app.goo.gl/JEsLkUzzbyPBkxgh6",
     placeId: "ChIJ9WgWji1xA2ARf6xDT5v8b4s",
+    googlePlaceName: "IG Arena",
     sports: ["柔道", "籃球"],
     note: ""
   },
@@ -892,6 +902,7 @@ const venues = [
     lng: 136.88437251703,
     googleMapUrl: "https://maps.app.goo.gl/nPhdFa3UpWVxCHSy8",
     placeId: "ChIJ39UCSGd-A2ARx8oNwu9fJb8",
+    googlePlaceName: "東海市民體育館",
     sports: ["卡巴迪"],
     note: ""
   },
@@ -903,6 +914,7 @@ const venues = [
     lng: 136.671303464109,
     googleMapUrl: "https://maps.app.goo.gl/jevq3Hppgynumb8r9",
     placeId: "ChIJMS5p7vajA2ARiHpkSRRkWSo",
+    googlePlaceName: "Nagaragawa International Regatta Course",
     sports: ["划船"],
     note: ""
   },
@@ -914,6 +926,7 @@ const venues = [
     lng: 137.163242333966,
     googleMapUrl: "https://maps.app.goo.gl/dFJCm5D5SeLX9f2z6",
     placeId: "ChIJG1DyEUWgBGARsZxk_s2K3Y4",
+    googlePlaceName: "Sky Hall Toyot",
     sports: ["桌球"],
     note: ""
   },
@@ -925,6 +938,7 @@ const venues = [
     lng: 136.92972902827,
     googleMapUrl: "https://maps.app.goo.gl/jkQa8tkfaXxiUTMq7",
     placeId: "ChIJ2dZfWpBwA2AR0L31wmznNo4",
+    googlePlaceName: "名古屋中小企業振興会",
     sports: ["舉重"],
     note: ""
   },
@@ -936,6 +950,7 @@ const venues = [
     lng: 136.869846962459,
     googleMapUrl: "https://maps.app.goo.gl/bqHJ16JV7jGSZ8Pe9",
     placeId: "ChIJHSmAttZ5A2ARGIJTy0az08Q",
+    googlePlaceName: "愛知県武道館",
     sports: ["武術", "柔術", "克拉術"],
     note: ""
   },
@@ -947,6 +962,7 @@ const venues = [
     lng: 137.091964050964,
     googleMapUrl: "https://maps.app.goo.gl/qkes7FQ4Cfjnrj9BA",
     placeId: "ChIJUSOEdgSZBGARM3NJgS66A24",
+    googlePlaceName: "Denso Bright Pegasus Stadium",
     sports: ["壘球"],
     note: ""
   },
@@ -958,6 +974,7 @@ const venues = [
     lng: 136.999086836176,
     googleMapUrl: "https://maps.app.goo.gl/g4BHQ3DMCNap4yhC8",
     placeId: "ChIJH9Cql9ZvA2ARlYu2dO1Xzek",
+    googlePlaceName: "小幡緑地 (中央園) 園路",
     sports: ["自由車（登山）"],
     note: ""
   },
@@ -969,6 +986,7 @@ const venues = [
     lng: 136.803220933867,
     googleMapUrl: "https://maps.app.goo.gl/GJ4rKTCfJ7jjFnZM8",
     placeId: "ChIJ2eYTqL2nA2AR5UOYirBIo4E",
+    googlePlaceName: "一宮市総合体育館",
     sports: ["羽球"],
     note: ""
   },
@@ -980,6 +998,7 @@ const venues = [
     lng: 137.034060024257,
     googleMapUrl: "https://maps.app.goo.gl/HsJnS54cRswQEABY7",
     placeId: "ChIJU9A__sVsA2ARCjCekMzp2kk",
+    googlePlaceName: "Kasugai Country Club",
     sports: ["高爾夫"],
     note: ""
   },
@@ -991,6 +1010,7 @@ const venues = [
     lng: 136.973408718045,
     googleMapUrl: "https://maps.app.goo.gl/ntvgNQNzaeThCFXU9",
     placeId: "ChIJbdqN5Mt6A2ARpx01XCI9KDw",
+    googlePlaceName: "Higashiyama Koen Tennis Center",
     sports: ["網球", "軟式網球"],
     note: ""
   },
@@ -1002,6 +1022,7 @@ const venues = [
     lng: 137.212114096213,
     googleMapUrl: "https://maps.app.goo.gl/LQvHqQhKd1KTY2UZA",
     placeId: "ChIJibIVe4C8BGARddoDrez3GPc",
+    googlePlaceName: "Okazaki Central Park General Gymnasium",
     sports: ["排球A"],
     note: ""
   },
@@ -1013,6 +1034,7 @@ const venues = [
     lng: 136.921836251405,
     googleMapUrl: "https://maps.app.goo.gl/XysUbsaCDH9atapYA",
     placeId: "ChIJCcTBDsAMA2ARJdZChvcWHlA",
+    googlePlaceName: "小牧市運動公園綜合體育館",
     sports: ["排球B"],
     note: ""
   },
@@ -1024,6 +1046,7 @@ const venues = [
     lng: 136.944331511184,
     googleMapUrl: "https://maps.app.goo.gl/CiP7LzDQMd3qdwk58",
     placeId: "ChIJ9-4gCAB7A2ARBggPhLymVhs",
+    googlePlaceName: "Paloma Mizuho Stadium",
     sports: ["田徑"],
     note: ""
   },
@@ -1035,6 +1058,7 @@ const venues = [
     lng: 136.819831314958,
     googleMapUrl: "https://maps.app.goo.gl/XKhrHh3r5AWjiW42A",
     placeId: "ChIJV_f-wWl9BGAR7MTL4KtT8g0",
+    googlePlaceName: "愛知縣國際展示場",
     sports: ["霹靂舞", "電競", "擊劍", "滑板", "自由車(BMX自由式)"],
     note: ""
   },
@@ -1046,6 +1070,7 @@ const venues = [
     lng: 137.309559837595,
     googleMapUrl: "https://maps.app.goo.gl/9eZoFBhTzWqzWYDe8",
     placeId: "ChIJBbFjdwBXA2ARLUJ7Dpd2FWo",
+    googlePlaceName: "矢作川カヌースラロームコース",
     sports: ["輕艇激流"],
     note: ""
   },
@@ -1057,6 +1082,7 @@ const venues = [
     lng: 137.425877406503,
     googleMapUrl: "https://maps.app.goo.gl/HEDGoPn3YJSLHayTA",
     placeId: "ChIJn-CFEuuyBGARQUQKA6pzfs8",
+    googlePlaceName: "愛知県総合射撃場",
     sports: ["射擊"],
     note: "步槍／手槍／飛靶"
   },
@@ -1068,6 +1094,7 @@ const venues = [
     lng: 137.221367511923,
     googleMapUrl: "https://maps.app.goo.gl/fkRGAJD3mVBXQoCz7",
     placeId: "ChIJz69l_TbHBGAR0dPv-sOdlu4",
+    googlePlaceName: "蒲郡市民会館",
     sports: ["鐵人三項"],
     note: ""
   },
@@ -1079,6 +1106,7 @@ const venues = [
     lng: 137.217740776233,
     googleMapUrl: "https://maps.app.goo.gl/AMgtzC5WfEPEijFdA",
     placeId: "ChIJh25lZE_ZBGAROUO_OZgHTPw",
+    googlePlaceName: "太平洋長灘",
     sports: ["衝浪"],
     note: ""
   },
@@ -1090,6 +1118,7 @@ const venues = [
     lng: 137.084272206715,
     googleMapUrl: "https://maps.app.goo.gl/dXKEuN2KRXSWuujV8",
     placeId: "ChIJcdu2SuSWBGARaymmXRBDXBw",
+    googlePlaceName: "西尾市 綜合體育館",
     sports: ["拳擊"],
     note: ""
   },
@@ -1101,6 +1130,7 @@ const venues = [
     lng: 137.324832659648,
     googleMapUrl: "https://maps.app.goo.gl/K91Wp4fmBezCuNSt5",
     placeId: "ChIJBXMmEMnPBGARZQ343QAJU4s",
+    googlePlaceName: "Toyohashi City General Gymnasium",
     sports: ["空手道", "跆拳道"],
     note: ""
   },
@@ -1112,6 +1142,7 @@ const venues = [
     lng: 137.268022576353,
     googleMapUrl: "https://maps.app.goo.gl/jL2K3BcjxULexBFs6",
     placeId: "ChIJkepr1mvGBGAR_-9UcfV4Xb4",
+    googlePlaceName: "Toyota Industries Kaiyoh Yacht Harbor",
     sports: ["帆船"],
     note: ""
   },
@@ -1122,7 +1153,8 @@ const venues = [
     lat: 35.0346891195371,
     lng: 137.468220393264,
     googleMapUrl: "https://maps.app.goo.gl/ZKtJBdT954rgd3UD6",
-    placeId: "",
+    placeId: "ChIJz41oRrlMG2ARXpiCJPkUlSM",
+    googlePlaceName: "Auto Land Tsukude",
     sports: ["自由車（公路）確切地點待確認"],
     note: ""
   },
@@ -1134,6 +1166,7 @@ const venues = [
     lng: 139.015457171251,
     googleMapUrl: "https://maps.app.goo.gl/8d5jbWaVvD78YmA67",
     placeId: "ChIJ32MiIvTrGWARFT8DySuDzrI",
+    googlePlaceName: "Izu Velodrome",
     sports: ["自由車(場地)"],
     note: ""
   },
@@ -1145,6 +1178,7 @@ const venues = [
     lng: 137.213881676132,
     googleMapUrl: "https://maps.app.goo.gl/wmnqk9YYFwmiMK2H9",
     placeId: "ChIJO-jg9n-8BGARQ0cPzlbNpds",
+    googlePlaceName: "岡崎市民球場",
     sports: ["棒球A"],
     note: ""
   },
@@ -1156,6 +1190,7 @@ const venues = [
     lng: 137.425051196323,
     googleMapUrl: "https://maps.app.goo.gl/PzYMGF33vdwqx9mj9",
     placeId: "ChIJ5bzpb-bSBGARP14XKJ7Oi8U",
+    googlePlaceName: "豊橋市民球場",
     sports: ["棒球B"],
     note: ""
   },
@@ -1167,6 +1202,7 @@ const venues = [
     lng: 136.865740347629,
     googleMapUrl: "https://maps.app.goo.gl/Jyms65SaCyCF6B76A",
     placeId: "ChIJ01Qt6lIJA2ARF2JzKd6BODQ",
+    googlePlaceName: "Gifu Prefectural Green Stadium",
     sports: ["曲棍球"],
     note: ""
   },
@@ -1178,6 +1214,7 @@ const venues = [
     lng: 137.170915196912,
     googleMapUrl: "https://maps.app.goo.gl/KJua1RBDUkiD1SsD9",
     placeId: "ChIJL43SmlmgBGAR23TKonToP90",
+    googlePlaceName: "豐田體育場",
     sports: ["女足A"],
     note: ""
   },
@@ -1189,6 +1226,7 @@ const venues = [
     lng: 136.850585922387,
     googleMapUrl: "https://maps.app.goo.gl/sMRoTRyczqeDt2qj9",
     placeId: "ChIJPwCYavZ4A2AR422HdJmMskw",
+    googlePlaceName: "名古屋市港足球場",
     sports: ["女足B"],
     note: ""
   },
@@ -1200,6 +1238,7 @@ const venues = [
     lng: 137.011874719456,
     googleMapUrl: "https://maps.app.goo.gl/RhVY6CL8q4U3GooT6",
     placeId: "ChIJifZntA2dBGAR53998DkcdUQ",
+    googlePlaceName: "Wave Stadium Kariya",
     sports: ["女足C"],
     note: ""
   },
@@ -1211,6 +1250,7 @@ const venues = [
     lng: 136.942627104563,
     googleMapUrl: "https://maps.app.goo.gl/mrxevPDUKYfrcseT7",
     placeId: "ChIJU4De1v56A2ARjjb_8W3Enho",
+    googlePlaceName: "Paloma Mizuho Rugby Stadium",
     sports: ["女足D"],
     note: ""
   },
@@ -1222,6 +1262,7 @@ const venues = [
     lng: 136.766100050915,
     googleMapUrl: "https://maps.app.goo.gl/K1Mj3eCkEUnfsqTC8",
     placeId: "ChIJbXXsO--rA2ARtIVAfnj0A90",
+    googlePlaceName: "Himaraya Stadium Gifu",
     sports: ["女足E"],
     note: ""
   },
@@ -1233,6 +1274,7 @@ const venues = [
     lng: 137.970795540662,
     googleMapUrl: "https://maps.app.goo.gl/xFPYU55AT99yE8Gu6",
     placeId: "ChIJO4pwMWb6GmARganaTcD0rQ8",
+    googlePlaceName: "靜岡縣小笠山綜合運動公園體育場",
     sports: ["女足F"],
     note: ""
   },
@@ -1244,6 +1286,7 @@ const venues = [
     lng: 135.518619672357,
     googleMapUrl: "https://maps.app.goo.gl/wzdgMKqjEuMNx98H7",
     placeId: "ChIJL_vjBC_cAGAR84bVU9nMVoU",
+    googlePlaceName: "洋馬長居體育場",
     sports: ["女足G"],
     note: ""
   },
@@ -1259,6 +1302,8 @@ const venues = [
    lat, lng      : 座標（必填）
    googleMapUrl  : Google Maps 短網址（僅供人工備查，不參與導航邏輯）
    placeId       : Google Place ID（供 buildGoogleMapsUrl() 優先使用）
+   googlePlaceName : Google Maps 上的正式地點名稱（僅供 buildGoogleMapsUrl() 產生連結使用，
+                    不會取代網站畫面上的中文名稱；留空時自動退回使用網站顯示名稱）
    teams         : 入住代表隊運動種類，請用陣列格式，例如 ["羽球", "桌球"]
    note          : 備註
 ========================================================= */
@@ -1271,6 +1316,7 @@ const accommodations = [
     lng: 136.847800573088,
     googleMapUrl: "https://maps.app.goo.gl/nLCfXWFMjDo3hEHTA",
     placeId: "ChIJ55ZeHMl4A2ARuwQ5OvBSSao",
+    googlePlaceName: "Kinjofuto Pier Water Bus Stop",
     teams: ["3x3籃球", "輕艇競速", "綜合格鬥", "體操(韻律)", "卡巴迪", "划船", "角力", "武術"],
     note: "選手村-郵輪"
   },
@@ -1282,6 +1328,7 @@ const accommodations = [
     lng: 136.882240579662,
     googleMapUrl: "https://maps.app.goo.gl/EBvhesSs76omibN5A",
     placeId: "ChIJ7cXP6Qp5A2ARyzT2OokIWkk",
+    googlePlaceName: "花園碼頭臨港綠園",
     teams: ["壘球", "籃球", "柔術", "克拉術", "自由車(登山)"],
     note: "選手村-villa"
   },
@@ -1293,6 +1340,7 @@ const accommodations = [
     lng: 136.913835723463,
     googleMapUrl: "https://maps.app.goo.gl/vJ7uZCXEa9QcVdLx5",
     placeId: "ChIJI7rLudpwA2ARrwmYTI1Wm2w",
+    googlePlaceName: "名古屋東急飯店",
     teams: ["羽球"],
     note: ""
   },
@@ -1304,6 +1352,7 @@ const accommodations = [
     lng: 136.89330207602,
     googleMapUrl: "https://maps.app.goo.gl/1mErLAdLF9hgtueM9",
     placeId: "ChIJvciGf_Z3A2ARmTwlvtzln9E",
+    googlePlaceName: "名古屋錦日航都市酒店",
     teams: ["高爾夫", "軟式網球"],
     note: ""
   },
@@ -1315,6 +1364,7 @@ const accommodations = [
     lng: 136.899155236795,
     googleMapUrl: "https://maps.app.goo.gl/rgaX2FVqep2gfBWBA",
     placeId: "ChIJSTG--S53A2ARcpxQlt3EzI4",
+    googlePlaceName: "Green Rich Hotel Nagoya Nishiki",
     teams: ["高爾夫"],
     note: ""
   },
@@ -1326,6 +1376,7 @@ const accommodations = [
     lng: 136.884652635702,
     googleMapUrl: "https://maps.app.goo.gl/ANGeaPrHwmQgtdca8",
     placeId: "ChIJa-4kCSB3A2ARQiu2eEcJ-3Y",
+    googlePlaceName: "名古屋斯特令格飯店",
     teams: ["網球"],
     note: ""
   },
@@ -1337,6 +1388,7 @@ const accommodations = [
     lng: 136.895992428721,
     googleMapUrl: "https://maps.app.goo.gl/PP7TLUBZrhFaDHEs8",
     placeId: "ChIJvd-WKih3A2ARK8HpiuovYms",
+    googlePlaceName: "名古屋觀光飯店",
     teams: ["網球"],
     note: ""
   },
@@ -1348,6 +1400,7 @@ const accommodations = [
     lng: 136.883892787647,
     googleMapUrl: "https://maps.app.goo.gl/Fm68VTLPrRVkNfHm9",
     placeId: "ChIJj4YYGadwA2AR8xFDqUlgjog",
+    googlePlaceName: "名古屋萬豪Associa酒店",
     teams: ["排球(男", "女)"],
     note: ""
   },
@@ -1359,6 +1412,7 @@ const accommodations = [
     lng: 136.885107830141,
     googleMapUrl: "https://maps.app.goo.gl/W7LYojWaMn8N3YA29",
     placeId: "ChIJ96BE4d12A2ARSA6BsWapprU",
+    googlePlaceName: "名鐵格蘭飯店",
     teams: ["排球(男", "女)"],
     note: ""
   },
@@ -1370,6 +1424,7 @@ const accommodations = [
     lng: 136.819266842653,
     googleMapUrl: "https://maps.app.goo.gl/2rKqFQ7L6fU2aMon8",
     placeId: "ChIJad8gSox9BGAREBqUplVWP8g",
+    googlePlaceName: "東橫INN 中部國際機場1號店",
     teams: ["電子競技"],
     note: ""
   },
@@ -1381,6 +1436,7 @@ const accommodations = [
     lng: 136.818691731917,
     googleMapUrl: "https://maps.app.goo.gl/oLjhbyb8z4nXJSrt6",
     placeId: "ChIJsQ1UjTJ9BGARkQ8l1vlq1Bg",
+    googlePlaceName: "中部國際機場東橫INN 2",
     teams: ["田徑", "霹靂舞", "電子競技", "滑板"],
     note: ""
   },
@@ -1392,6 +1448,7 @@ const accommodations = [
     lng: 136.818294327996,
     googleMapUrl: "https://maps.app.goo.gl/kQkTWkY8N7qyvmFV9",
     placeId: "ChIJC-hcBSR9BGARN8yck3BB1qc",
+    googlePlaceName: "名古屋中部國際機場福朋喜來登酒店",
     teams: ["擊劍"],
     note: ""
   },
@@ -1403,6 +1460,7 @@ const accommodations = [
     lng: 137.192488969065,
     googleMapUrl: "https://maps.app.goo.gl/snu9EsPzfEj1StAcA",
     placeId: "ChIJHZIw0eteA2ARAiCEhp8mnAk",
+    googlePlaceName: "全トヨタ労連 つどいの丘",
     teams: ["輕艇激流"],
     note: ""
   },
@@ -1414,6 +1472,7 @@ const accommodations = [
     lng: 137.256760474794,
     googleMapUrl: "https://maps.app.goo.gl/hV3Dr5TtaREith8H9",
     placeId: "ChIJuw4D3V7GBGARo-nqCRemBrU",
+    googlePlaceName: "明山莊",
     teams: ["拳擊"],
     note: ""
   },
@@ -1425,6 +1484,7 @@ const accommodations = [
     lng: 137.253823349782,
     googleMapUrl: "https://maps.app.goo.gl/i9DMGm8FdvKUo6eA7",
     placeId: "ChIJe-78pTPHBGARg1KmKEJ-CN8",
+    googlePlaceName: "Gamagori Hotel",
     teams: ["拳擊"],
     note: ""
   },
@@ -1436,6 +1496,7 @@ const accommodations = [
     lng: 137.663533223594,
     googleMapUrl: "https://maps.app.goo.gl/F63mvXVeZxzBfkJ76",
     placeId: "ChIJA9Apq_Y1G2ARjF493tLB6g4",
+    googlePlaceName: "Route Inn Shinshiro Hotel",
     teams: ["自由車(公路)"],
     note: ""
   },
@@ -1447,6 +1508,7 @@ const accommodations = [
     lng: 137.371619455201,
     googleMapUrl: "https://maps.app.goo.gl/FmivYS8hiQTgxDzs8",
     placeId: "ChIJKX5aCyDSBGAR9_YIq1ENvNc",
+    googlePlaceName: "豐橋遙索爾酒店",
     teams: ["空手道", "跆拳道"],
     note: ""
   },
@@ -1458,6 +1520,7 @@ const accommodations = [
     lng: 137.268446011588,
     googleMapUrl: "https://maps.app.goo.gl/JUmjB5z9LGjmuYtTA",
     placeId: "ChIJQ6bhjWnGBGARKyNwl8s1jB4",
+    googlePlaceName: "Henn na Hotel Laguna Ten Bosch",
     teams: ["帆船"],
     note: ""
   },
@@ -1473,6 +1536,8 @@ const accommodations = [
    lat, lng      : 座標（必填）
    googleMapUrl  : Google Maps 短網址（僅供人工備查，不參與導航邏輯）
    placeId       : Google Place ID（供 buildGoogleMapsUrl() 優先使用）
+   googlePlaceName : Google Maps 上的正式地點名稱（僅供 buildGoogleMapsUrl() 產生連結使用，
+                    不會取代網站畫面上的中文名稱；留空時自動退回使用網站顯示名稱）
    teams         : 入住團別／代表隊，請用陣列格式，例如 ["桌球"]
    note          : 備註
 ========================================================= */
@@ -1485,6 +1550,7 @@ const eventGroups = [
     lng: 136.900704263245,
     googleMapUrl: "https://maps.app.goo.gl/PJvgE4KrnNdaxDk6A",
     placeId: "ChIJn2v8ASt3A2ARd888DWQlFUs",
+    googlePlaceName: "名古屋伏見凱富酒店",
     teams: ["桌球"],
     note: ""
   },
@@ -1496,6 +1562,7 @@ const eventGroups = [
     lng: 136.885397463731,
     googleMapUrl: "https://maps.app.goo.gl/uzgPfU5Xxt69rgji9",
     placeId: "ChIJ77VVfgB3A2ARBEZ2hVfYVWE",
+    googlePlaceName: "セトレ キャナル 名古屋",
     teams: ["射箭", "舉重"],
     note: ""
   },
@@ -1507,6 +1574,7 @@ const eventGroups = [
     lng: 136.902724799326,
     googleMapUrl: "https://maps.app.goo.gl/VesvZmAFX4qQiGYh7",
     placeId: "ChIJywEAQNVwA2ARDxxIX5PS3G4",
+    googlePlaceName: "名古屋榮彩鴻酒店",
     teams: ["競技體操"],
     note: ""
   },
@@ -1518,6 +1586,7 @@ const eventGroups = [
     lng: 136.906627615454,
     googleMapUrl: "https://maps.app.goo.gl/FtjbPcTc6ZqCrX1Z9",
     placeId: "ChIJw4LCq9VwA2AR15wGfl6Bbho",
+    googlePlaceName: "VESSEL INN SAKAE STATION",
     teams: [],
     note: ""
   },
@@ -1579,13 +1648,12 @@ function popupRow(label, value) {
 // 未來若 Google Maps 連結規則變更，只需修改這個函式即可，
 // 不需要修改任何 Popup 或四個資料陣列。
 //
-// 取得可供人類閱讀的地點名稱（依序嘗試各分類名稱欄位，最後退回地址）
-function getLocationName(item) {
+// 取得網站畫面上顯示用的名稱（不含 googlePlaceName，僅供 Google Maps 查無正式名稱時的備援）
+function getDisplayName(item) {
   return (
     item.hotelName ||
     item.venueName ||
     item.stationName ||
-    item.address ||
     ''
   );
 }
@@ -1595,37 +1663,43 @@ function getLocationName(item) {
 // 使用者可在開啟地點頁後，自行點擊「路線」進行導航。
 //
 // 優先順序：
-// ① placeId 存在 → query 使用「名稱＋地址」＋ query_place_id（最精準）
-// ② 無 placeId，但名稱＋地址存在 → 僅用 query（名稱＋地址）
-// ③ placeId、名稱、地址皆不存在 → 才退回使用 lat,lng 作為 query
+// ① placeId 存在 → query 優先使用 googlePlaceName（Google Maps 正式名稱，不含地址）；
+//    若 googlePlaceName 空白，才退回使用網站顯示名稱或地址；query_place_id 使用 Place ID
+// ② 無 placeId → query 使用「(googlePlaceName 或網站顯示名稱) ＋ 地址」
+// ③ ①②皆無法組成 query → 才退回使用 lat,lng 作為 query
 // ④ 皆不存在 → 回傳空字串（不顯示 Google Maps 按鈕）
 //
 // 注意：item.googleMapUrl 僅保留於資料陣列作為人工備查用途，
 // 完全不參與這裡的網站導航邏輯。
 function buildGoogleMapsUrl(item) {
-  const name = getLocationName(item);
-  const address = item.address || '';
-  const query = [name, address]
-    .filter(Boolean)
-    .join(' ');
+  const googleName = (item.googlePlaceName || '').trim();
+  const displayName = getDisplayName(item);
+  const address = (item.address || '').trim();
 
   if (item.placeId) {
+    const query = googleName || displayName || address;
+
     return (
       'https://www.google.com/maps/search/?api=1' +
-      `&query=${encodeURIComponent(query || name || address)}` +
-      `&query_place_id=${encodeURIComponent(item.placeId)}`
+      `&query=${encodeURIComponent(query)}` +
+      `&query_place_id=${encodeURIComponent(item.placeId.trim())}`
     );
   }
 
-  if (query) {
+  const fallbackQuery = [googleName || displayName, address]
+    .filter(Boolean)
+    .join(' ');
+
+  if (fallbackQuery) {
     return (
       'https://www.google.com/maps/search/?api=1' +
-      `&query=${encodeURIComponent(query)}`
+      `&query=${encodeURIComponent(fallbackQuery)}`
     );
   }
 
   const lat = Number(item.lat);
   const lng = Number(item.lng);
+
   if (Number.isFinite(lat) && Number.isFinite(lng)) {
     return (
       'https://www.google.com/maps/search/?api=1' +
