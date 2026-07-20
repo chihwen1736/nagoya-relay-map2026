@@ -774,14 +774,12 @@ if (mobileUpdatedEl) {
    id            : 唯一識別碼（請勿重複）
    stationName   : 中繼站名稱
    address       : 中繼站地址
-   lat, lng      : 座標（必填，Leaflet Marker 需要用這兩個值來定位，
-                    Google Maps 連結只能作為輔助資訊，
-                    無法取代 lat / lng，請務必手動查好座標填入）
-   googleMapUrl  : Google Maps 連結（供人工點擊確認位置 / 導航使用）
+   lat, lng      : 座標（必填）
+   googleMapUrl  : Google Maps 短網址（僅保留於資料庫作為人工備查用途，
+                    網站導航一律改用 buildGoogleMapsUrl() 動態產生連結，
+                    不直接使用此欄位）
+   placeId       : Google Place ID（供 buildGoogleMapsUrl() 優先使用）
    note          : 備註
-
-   ※ 更新資料時，直接複製一組物件、修改內容即可，
-     不需要更動下方的地圖 / 清單渲染程式碼。
 ========================================================= */
 const relayStations = [
   {
@@ -791,6 +789,7 @@ const relayStations = [
     lat: 35.1705337797112,
     lng: 136.895721486769,
     googleMapUrl: "https://maps.app.goo.gl/gcjMwriKTFMBdDuP6",
+    placeId: "ChIJbfleqdd2A2ARWzaSgsdyqwI",
     note: "御園小學校"
   },
   {
@@ -800,6 +799,7 @@ const relayStations = [
     lat: 34.7006593652626,
     lng: 137.421460481648,
     googleMapUrl: "https://maps.app.goo.gl/44itw3Rna5y6pWJL6",
+    placeId: "ChIJGzZbTZDUBGARIAGbCnypYPo",
     note: "豐橋培訓中心"
   },
 ];
@@ -812,7 +812,8 @@ const relayStations = [
    venueName     : 場館名稱
    address       : 場館地址
    lat, lng      : 座標（必填）
-   googleMapUrl  : Google Maps 連結
+   googleMapUrl  : Google Maps 短網址（僅供人工備查，不參與導航邏輯）
+   placeId       : Google Place ID（供 buildGoogleMapsUrl() 優先使用）
    sports        : 比賽運動項目，陣列格式，例如 ["羽球"]
    note          : 備註
 ========================================================= */
@@ -824,16 +825,18 @@ const venues = [
     lat: 34.9471072596199,
     lng: 137.208954781197,
     googleMapUrl: "https://maps.app.goo.gl/tfy9BqGffLymNBzn7",
+    placeId: "ChIJzfrGMIe8BGARUKOOECfBhZM",
     sports: ["射箭"],
     note: "反曲弓／複合弓"
   },
   {
     id: 2,
     venueName: "金城埠頭站前廣場會場",
-    address: "2 Chome-7番 Kinjofuto, Minato Ward, Nagoya, Aichi 455-0848日本",
-    lat: 35.0491159507601,
-    lng: 136.847161866103,
-    googleMapUrl: "https://maps.app.goo.gl/UrGUvNpviTdNWBdz5",
+    address: "3 Chome Kinjofuto, 港區名古屋市愛知縣 455-0848日本",
+    lat: 35.0489803760411,
+    lng: 136.849326234089,
+    googleMapUrl: "https://maps.app.goo.gl/5HbaM7BKT9ALSQD16",
+    placeId: "ChIJufcksch4A2AR2nmcVR5b0fM",
     sports: ["3x3籃球"],
     note: ""
   },
@@ -844,6 +847,7 @@ const venues = [
     lat: 35.0890583443312,
     lng: 137.09192799977,
     googleMapUrl: "https://maps.app.goo.gl/t1r8PoEqpyso3J3i9",
+    placeId: "ChIJiwwqrc5hA2ARdUJEyQtqxiQ",
     sports: ["輕艇競速"],
     note: ""
   },
@@ -854,6 +858,7 @@ const venues = [
     lat: 35.0799725719546,
     lng: 136.849318844259,
     googleMapUrl: "https://maps.app.goo.gl/tKBBtW9NwkEXREts5",
+    placeId: "ChIJq6pqy154A2ARBVWNsNoRIWE",
     sports: ["綜合格鬥", "角力"],
     note: ""
   },
@@ -864,6 +869,7 @@ const venues = [
     lat: 35.0985869373413,
     lng: 136.923675099653,
     googleMapUrl: "https://maps.app.goo.gl/zBM33BGSNN5Lc5Pa6",
+    placeId: "ChIJXSQQI797A2ARTB2rtM6MJ_I",
     sports: ["體操"],
     note: "競技/韻律"
   },
@@ -874,6 +880,7 @@ const venues = [
     lat: 35.1901041519846,
     lng: 136.902681043476,
     googleMapUrl: "https://maps.app.goo.gl/JEsLkUzzbyPBkxgh6",
+    placeId: "ChIJ9WgWji1xA2ARf6xDT5v8b4s",
     sports: ["柔道", "籃球"],
     note: ""
   },
@@ -884,6 +891,7 @@ const venues = [
     lat: 35.0153198783861,
     lng: 136.88437251703,
     googleMapUrl: "https://maps.app.goo.gl/nPhdFa3UpWVxCHSy8",
+    placeId: "ChIJ39UCSGd-A2ARx8oNwu9fJb8",
     sports: ["卡巴迪"],
     note: ""
   },
@@ -891,9 +899,10 @@ const venues = [
     id: 8,
     venueName: "長良川國際划船競賽場",
     address: "940-1 Kaizucho Nagase, Kaizu, Gifu 503-0614日本",
-    lat: 35.1822862686612,
-    lng: 136.671328559118,
-    googleMapUrl: "https://maps.app.goo.gl/qKYWaPnbcnpRdoh56",
+    lat: 35.1734134872915,
+    lng: 136.671303464109,
+    googleMapUrl: "https://maps.app.goo.gl/jevq3Hppgynumb8r9",
+    placeId: "ChIJMS5p7vajA2ARiHpkSRRkWSo",
     sports: ["划船"],
     note: ""
   },
@@ -904,6 +913,7 @@ const venues = [
     lat: 35.0814767456224,
     lng: 137.163242333966,
     googleMapUrl: "https://maps.app.goo.gl/dFJCm5D5SeLX9f2z6",
+    placeId: "ChIJG1DyEUWgBGARsZxk_s2K3Y4",
     sports: ["桌球"],
     note: ""
   },
@@ -914,6 +924,7 @@ const venues = [
     lat: 35.1582743394541,
     lng: 136.92972902827,
     googleMapUrl: "https://maps.app.goo.gl/jkQa8tkfaXxiUTMq7",
+    placeId: "ChIJ2dZfWpBwA2AR0L31wmznNo4",
     sports: ["舉重"],
     note: ""
   },
@@ -924,6 +935,7 @@ const venues = [
     lat: 35.1176444179729,
     lng: 136.869846962459,
     googleMapUrl: "https://maps.app.goo.gl/bqHJ16JV7jGSZ8Pe9",
+    placeId: "ChIJHSmAttZ5A2ARGIJTy0az08Q",
     sports: ["武術", "柔術", "克拉術"],
     note: ""
   },
@@ -931,9 +943,10 @@ const venues = [
     id: 12,
     venueName: "安城市綜合運動公園壘球場",
     address: "Shinjo Shindencho, Anjo, Aichi 446-0061日本",
-    lat: 34.9726522809943,
-    lng: 137.09161939806,
-    googleMapUrl: "https://maps.app.goo.gl/4EREYbPEvcyXj88C9",
+    lat: 34.9729105526803,
+    lng: 137.091964050964,
+    googleMapUrl: "https://maps.app.goo.gl/qkes7FQ4Cfjnrj9BA",
+    placeId: "ChIJUSOEdgSZBGARM3NJgS66A24",
     sports: ["壘球"],
     note: ""
   },
@@ -941,9 +954,10 @@ const venues = [
     id: 13,
     venueName: "小幡綠地公園登山車賽道",
     address: "1 Chome Omorikita, Moriyama Ward, Nagoya, Aichi 463-0802日本",
-    lat: 35.218213611744,
-    lng: 136.999058369728,
-    googleMapUrl: "https://maps.app.goo.gl/jiGzcuXpx5tSdGsi6",
+    lat: 35.2182097051472,
+    lng: 136.999086836176,
+    googleMapUrl: "https://maps.app.goo.gl/g4BHQ3DMCNap4yhC8",
+    placeId: "ChIJH9Cql9ZvA2ARlYu2dO1Xzek",
     sports: ["自由車（登山）"],
     note: ""
   },
@@ -954,6 +968,7 @@ const venues = [
     lat: 35.359766763788,
     lng: 136.803220933867,
     googleMapUrl: "https://maps.app.goo.gl/GJ4rKTCfJ7jjFnZM8",
+    placeId: "ChIJ2eYTqL2nA2AR5UOYirBIo4E",
     sports: ["羽球"],
     note: ""
   },
@@ -964,6 +979,7 @@ const venues = [
     lat: 35.3287699544572,
     lng: 137.034060024257,
     googleMapUrl: "https://maps.app.goo.gl/HsJnS54cRswQEABY7",
+    placeId: "ChIJU9A__sVsA2ARCjCekMzp2kk",
     sports: ["高爾夫"],
     note: ""
   },
@@ -974,6 +990,7 @@ const venues = [
     lat: 35.1479180895597,
     lng: 136.973408718045,
     googleMapUrl: "https://maps.app.goo.gl/ntvgNQNzaeThCFXU9",
+    placeId: "ChIJbdqN5Mt6A2ARpx01XCI9KDw",
     sports: ["網球", "軟式網球"],
     note: ""
   },
@@ -984,6 +1001,7 @@ const venues = [
     lat: 34.9474933912651,
     lng: 137.212114096213,
     googleMapUrl: "https://maps.app.goo.gl/LQvHqQhKd1KTY2UZA",
+    placeId: "ChIJibIVe4C8BGARddoDrez3GPc",
     sports: ["排球A"],
     note: ""
   },
@@ -994,6 +1012,7 @@ const venues = [
     lat: 35.3066549033093,
     lng: 136.921836251405,
     googleMapUrl: "https://maps.app.goo.gl/XysUbsaCDH9atapYA",
+    placeId: "ChIJCcTBDsAMA2ARJdZChvcWHlA",
     sports: ["排球B"],
     note: ""
   },
@@ -1004,6 +1023,7 @@ const venues = [
     lat: 35.1231040548465,
     lng: 136.944331511184,
     googleMapUrl: "https://maps.app.goo.gl/CiP7LzDQMd3qdwk58",
+    placeId: "ChIJ9-4gCAB7A2ARBggPhLymVhs",
     sports: ["田徑"],
     note: ""
   },
@@ -1014,6 +1034,7 @@ const venues = [
     lat: 34.8567088256777,
     lng: 136.819831314958,
     googleMapUrl: "https://maps.app.goo.gl/XKhrHh3r5AWjiW42A",
+    placeId: "ChIJV_f-wWl9BGAR7MTL4KtT8g0",
     sports: ["霹靂舞", "電競", "擊劍", "滑板", "自由車(BMX自由式)"],
     note: ""
   },
@@ -1024,6 +1045,7 @@ const venues = [
     lat: 35.2045307488574,
     lng: 137.309559837595,
     googleMapUrl: "https://maps.app.goo.gl/9eZoFBhTzWqzWYDe8",
+    placeId: "ChIJBbFjdwBXA2ARLUJ7Dpd2FWo",
     sports: ["輕艇激流"],
     note: ""
   },
@@ -1034,6 +1056,7 @@ const venues = [
     lat: 35.0564175318128,
     lng: 137.425877406503,
     googleMapUrl: "https://maps.app.goo.gl/HEDGoPn3YJSLHayTA",
+    placeId: "ChIJn-CFEuuyBGARQUQKA6pzfs8",
     sports: ["射擊"],
     note: "步槍／手槍／飛靶"
   },
@@ -1044,6 +1067,7 @@ const venues = [
     lat: 34.8221965300095,
     lng: 137.221367511923,
     googleMapUrl: "https://maps.app.goo.gl/fkRGAJD3mVBXQoCz7",
+    placeId: "ChIJz69l_TbHBGAR0dPv-sOdlu4",
     sports: ["鐵人三項"],
     note: ""
   },
@@ -1051,9 +1075,10 @@ const venues = [
     id: 24,
     venueName: "太平洋長灘（愛知縣田原市）",
     address: "〒441-3501, Nagasawa-137 Akabanechō, Tahara, Aichi 441-3502日本",
-    lat: 34.6150218864275,
-    lng: 137.218145772871,
-    googleMapUrl: "https://maps.app.goo.gl/bH6uPN4UAhVDZvuv9",
+    lat: 34.6151976561277,
+    lng: 137.217740776233,
+    googleMapUrl: "https://maps.app.goo.gl/AMgtzC5WfEPEijFdA",
+    placeId: "ChIJh25lZE_ZBGAROUO_OZgHTPw",
     sports: ["衝浪"],
     note: ""
   },
@@ -1064,6 +1089,7 @@ const venues = [
     lat: 34.897967325331,
     lng: 137.084272206715,
     googleMapUrl: "https://maps.app.goo.gl/dXKEuN2KRXSWuujV8",
+    placeId: "ChIJcdu2SuSWBGARaymmXRBDXBw",
     sports: ["拳擊"],
     note: ""
   },
@@ -1074,6 +1100,7 @@ const venues = [
     lat: 34.7582119066612,
     lng: 137.324832659648,
     googleMapUrl: "https://maps.app.goo.gl/K91Wp4fmBezCuNSt5",
+    placeId: "ChIJBXMmEMnPBGARZQ343QAJU4s",
     sports: ["空手道", "跆拳道"],
     note: ""
   },
@@ -1084,6 +1111,7 @@ const venues = [
     lat: 34.8064393497087,
     lng: 137.268022576353,
     googleMapUrl: "https://maps.app.goo.gl/jL2K3BcjxULexBFs6",
+    placeId: "ChIJkepr1mvGBGAR_-9UcfV4Xb4",
     sports: ["帆船"],
     note: ""
   },
@@ -1094,7 +1122,8 @@ const venues = [
     lat: 35.0346891195371,
     lng: 137.468220393264,
     googleMapUrl: "https://maps.app.goo.gl/ZKtJBdT954rgd3UD6",
-    sports: ["自由車（公路）"],
+    placeId: "",
+    sports: ["自由車（公路）確切地點待確認"],
     note: ""
   },
   {
@@ -1104,6 +1133,7 @@ const venues = [
     lat: 35.0112623947948,
     lng: 139.015457171251,
     googleMapUrl: "https://maps.app.goo.gl/8d5jbWaVvD78YmA67",
+    placeId: "ChIJ32MiIvTrGWARFT8DySuDzrI",
     sports: ["自由車(場地)"],
     note: ""
   },
@@ -1114,6 +1144,7 @@ const venues = [
     lat: 34.9471397360546,
     lng: 137.213881676132,
     googleMapUrl: "https://maps.app.goo.gl/wmnqk9YYFwmiMK2H9",
+    placeId: "ChIJO-jg9n-8BGARQ0cPzlbNpds",
     sports: ["棒球A"],
     note: ""
   },
@@ -1124,16 +1155,18 @@ const venues = [
     lat: 34.7575908699638,
     lng: 137.425051196323,
     googleMapUrl: "https://maps.app.goo.gl/PzYMGF33vdwqx9mj9",
+    placeId: "ChIJ5bzpb-bSBGARP14XKJ7Oi8U",
     sports: ["棒球B"],
     note: ""
   },
   {
     id: 32,
     venueName: "岐阜縣綠色體育場",
-    address: "6 Chome-1-4 Shimogiricho, Kakamigahara, Gifu 504-0924日本",
+    address: "6-chōme-1-4 Shimogirichō, Kakamigahara, Gifu 504-0924日本",
     lat: 35.4134218834698,
     lng: 136.865740347629,
     googleMapUrl: "https://maps.app.goo.gl/Jyms65SaCyCF6B76A",
+    placeId: "ChIJ01Qt6lIJA2ARF2JzKd6BODQ",
     sports: ["曲棍球"],
     note: ""
   },
@@ -1144,6 +1177,7 @@ const venues = [
     lat: 35.0847666653437,
     lng: 137.170915196912,
     googleMapUrl: "https://maps.app.goo.gl/KJua1RBDUkiD1SsD9",
+    placeId: "ChIJL43SmlmgBGAR23TKonToP90",
     sports: ["女足A"],
     note: ""
   },
@@ -1154,6 +1188,7 @@ const venues = [
     lat: 35.0761479493762,
     lng: 136.850585922387,
     googleMapUrl: "https://maps.app.goo.gl/sMRoTRyczqeDt2qj9",
+    placeId: "ChIJPwCYavZ4A2AR422HdJmMskw",
     sports: ["女足B"],
     note: ""
   },
@@ -1164,6 +1199,7 @@ const venues = [
     lat: 35.0197261717851,
     lng: 137.011874719456,
     googleMapUrl: "https://maps.app.goo.gl/RhVY6CL8q4U3GooT6",
+    placeId: "ChIJifZntA2dBGAR53998DkcdUQ",
     sports: ["女足C"],
     note: ""
   },
@@ -1174,6 +1210,7 @@ const venues = [
     lat: 35.1211695014504,
     lng: 136.942627104563,
     googleMapUrl: "https://maps.app.goo.gl/mrxevPDUKYfrcseT7",
+    placeId: "ChIJU4De1v56A2ARjjb_8W3Enho",
     sports: ["女足D"],
     note: ""
   },
@@ -1182,8 +1219,9 @@ const venues = [
     venueName: "岐阜長良川競技場",
     address: "岐阜県岐阜市長良福光大野2675-28",
     lat: 35.4413781773848,
-    lng: 136.76610005091499,
+    lng: 136.766100050915,
     googleMapUrl: "https://maps.app.goo.gl/K1Mj3eCkEUnfsqTC8",
+    placeId: "ChIJbXXsO--rA2ARtIVAfnj0A90",
     sports: ["女足E"],
     note: ""
   },
@@ -1194,6 +1232,7 @@ const venues = [
     lat: 34.7436087816954,
     lng: 137.970795540662,
     googleMapUrl: "https://maps.app.goo.gl/xFPYU55AT99yE8Gu6",
+    placeId: "ChIJO4pwMWb6GmARganaTcD0rQ8",
     sports: ["女足F"],
     note: ""
   },
@@ -1204,6 +1243,7 @@ const venues = [
     lat: 34.6141846283041,
     lng: 135.518619672357,
     googleMapUrl: "https://maps.app.goo.gl/wzdgMKqjEuMNx98H7",
+    placeId: "ChIJL_vjBC_cAGAR84bVU9nMVoU",
     sports: ["女足G"],
     note: ""
   },
@@ -1217,7 +1257,8 @@ const venues = [
    hotelName     : 住宿名稱
    address       : 住宿地址
    lat, lng      : 座標（必填）
-   googleMapUrl  : Google Maps 連結
+   googleMapUrl  : Google Maps 短網址（僅供人工備查，不參與導航邏輯）
+   placeId       : Google Place ID（供 buildGoogleMapsUrl() 優先使用）
    teams         : 入住代表隊運動種類，請用陣列格式，例如 ["羽球", "桌球"]
    note          : 備註
 ========================================================= */
@@ -1226,9 +1267,10 @@ const accommodations = [
     id: 1,
     hotelName: "金城碼頭",
     address: "3 Chome Kinjofuto, Minato Ward, Nagoya, Aichi 455-0848日本",
-    lat: 35.0466558445123,
-    lng: 136.847897344974,
-    googleMapUrl: "https://maps.app.goo.gl/9mxt3xchtCR7tmao7",
+    lat: 35.0469979521809,
+    lng: 136.847800573088,
+    googleMapUrl: "https://maps.app.goo.gl/nLCfXWFMjDo3hEHTA",
+    placeId: "ChIJ55ZeHMl4A2ARuwQ5OvBSSao",
     teams: ["3x3籃球", "輕艇競速", "綜合格鬥", "體操(韻律)", "卡巴迪", "划船", "角力", "武術"],
     note: "選手村-郵輪"
   },
@@ -1236,9 +1278,10 @@ const accommodations = [
     id: 2,
     hotelName: "花園碼頭",
     address: "1-108 Minatomachi, Minato Ward, Nagoya, Aichi 455-0033日本",
-    lat: 35.089887282353,
-    lng: 136.882748149417,
+    lat: 35.0899812571042,
+    lng: 136.882240579662,
     googleMapUrl: "https://maps.app.goo.gl/EBvhesSs76omibN5A",
+    placeId: "ChIJ7cXP6Qp5A2ARyzT2OokIWkk",
     teams: ["壘球", "籃球", "柔術", "克拉術", "自由車(登山)"],
     note: "選手村-villa"
   },
@@ -1249,6 +1292,7 @@ const accommodations = [
     lat: 35.1685930987743,
     lng: 136.913835723463,
     googleMapUrl: "https://maps.app.goo.gl/vJ7uZCXEa9QcVdLx5",
+    placeId: "ChIJI7rLudpwA2ARrwmYTI1Wm2w",
     teams: ["羽球"],
     note: ""
   },
@@ -1259,6 +1303,7 @@ const accommodations = [
     lat: 35.1689124368409,
     lng: 136.89330207602,
     googleMapUrl: "https://maps.app.goo.gl/1mErLAdLF9hgtueM9",
+    placeId: "ChIJvciGf_Z3A2ARmTwlvtzln9E",
     teams: ["高爾夫", "軟式網球"],
     note: ""
   },
@@ -1269,6 +1314,7 @@ const accommodations = [
     lat: 35.1722063629173,
     lng: 136.899155236795,
     googleMapUrl: "https://maps.app.goo.gl/rgaX2FVqep2gfBWBA",
+    placeId: "ChIJSTG--S53A2ARcpxQlt3EzI4",
     teams: ["高爾夫"],
     note: ""
   },
@@ -1279,6 +1325,7 @@ const accommodations = [
     lat: 35.1642458656371,
     lng: 136.884652635702,
     googleMapUrl: "https://maps.app.goo.gl/ANGeaPrHwmQgtdca8",
+    placeId: "ChIJa-4kCSB3A2ARQiu2eEcJ-3Y",
     teams: ["網球"],
     note: ""
   },
@@ -1289,6 +1336,7 @@ const accommodations = [
     lat: 35.1688833869491,
     lng: 136.895992428721,
     googleMapUrl: "https://maps.app.goo.gl/PP7TLUBZrhFaDHEs8",
+    placeId: "ChIJvd-WKih3A2ARK8HpiuovYms",
     teams: ["網球"],
     note: ""
   },
@@ -1299,7 +1347,8 @@ const accommodations = [
     lat: 35.1710953408597,
     lng: 136.883892787647,
     googleMapUrl: "https://maps.app.goo.gl/Fm68VTLPrRVkNfHm9",
-    teams: ["排球（男、女）"],
+    placeId: "ChIJj4YYGadwA2AR8xFDqUlgjog",
+    teams: ["排球(男", "女)"],
     note: ""
   },
   {
@@ -1309,7 +1358,8 @@ const accommodations = [
     lat: 35.1686108231064,
     lng: 136.885107830141,
     googleMapUrl: "https://maps.app.goo.gl/W7LYojWaMn8N3YA29",
-    teams: ["排球（男、女）"],
+    placeId: "ChIJ96BE4d12A2ARSA6BsWapprU",
+    teams: ["排球(男", "女)"],
     note: ""
   },
   {
@@ -1319,16 +1369,18 @@ const accommodations = [
     lat: 34.8617340108013,
     lng: 136.819266842653,
     googleMapUrl: "https://maps.app.goo.gl/2rKqFQ7L6fU2aMon8",
+    placeId: "ChIJad8gSox9BGAREBqUplVWP8g",
     teams: ["電子競技"],
     note: ""
   },
   {
     id: 11,
     hotelName: "中部國際機場東橫INN 2",
-    address: "4 Chome-2-5 Centrair, Tokoname, Aichi 479-0881日本",
-    lat: 34.8628497519571,
-    lng: 136.819130256517,
+    address: "4-chōme-2-5 Centrair, Tokoname, Aichi 479-0881日本",
+    lat: 34.8567277926493,
+    lng: 136.818691731917,
     googleMapUrl: "https://maps.app.goo.gl/oLjhbyb8z4nXJSrt6",
+    placeId: "ChIJsQ1UjTJ9BGARkQ8l1vlq1Bg",
     teams: ["田徑", "霹靂舞", "電子競技", "滑板"],
     note: ""
   },
@@ -1339,6 +1391,7 @@ const accommodations = [
     lat: 34.8618188684882,
     lng: 136.818294327996,
     googleMapUrl: "https://maps.app.goo.gl/kQkTWkY8N7qyvmFV9",
+    placeId: "ChIJC-hcBSR9BGARN8yck3BB1qc",
     teams: ["擊劍"],
     note: ""
   },
@@ -1349,6 +1402,7 @@ const accommodations = [
     lat: 35.1685462655687,
     lng: 137.192488969065,
     googleMapUrl: "https://maps.app.goo.gl/snu9EsPzfEj1StAcA",
+    placeId: "ChIJHZIw0eteA2ARAiCEhp8mnAk",
     teams: ["輕艇激流"],
     note: ""
   },
@@ -1359,6 +1413,7 @@ const accommodations = [
     lat: 34.8073569692177,
     lng: 137.256760474794,
     googleMapUrl: "https://maps.app.goo.gl/hV3Dr5TtaREith8H9",
+    placeId: "ChIJuw4D3V7GBGARo-nqCRemBrU",
     teams: ["拳擊"],
     note: ""
   },
@@ -1369,6 +1424,7 @@ const accommodations = [
     lat: 34.8215122176799,
     lng: 137.253823349782,
     googleMapUrl: "https://maps.app.goo.gl/i9DMGm8FdvKUo6eA7",
+    placeId: "ChIJe-78pTPHBGARg1KmKEJ-CN8",
     teams: ["拳擊"],
     note: ""
   },
@@ -1378,7 +1434,8 @@ const accommodations = [
     address: "25-12 Matoba, Shinshiro, Aichi 441-1375日本",
     lat: 34.9240308787612,
     lng: 137.663533223594,
-    googleMapUrl: "https://maps.app.goo.gl/Bp6UwNR7nNNCxbvp8",
+    googleMapUrl: "https://maps.app.goo.gl/F63mvXVeZxzBfkJ76",
+    placeId: "ChIJA9Apq_Y1G2ARjF493tLB6g4",
     teams: ["自由車(公路)"],
     note: ""
   },
@@ -1389,6 +1446,7 @@ const accommodations = [
     lat: 34.7435863816649,
     lng: 137.371619455201,
     googleMapUrl: "https://maps.app.goo.gl/FmivYS8hiQTgxDzs8",
+    placeId: "ChIJKX5aCyDSBGAR9_YIq1ENvNc",
     teams: ["空手道", "跆拳道"],
     note: ""
   },
@@ -1399,6 +1457,7 @@ const accommodations = [
     lat: 34.8072740822147,
     lng: 137.268446011588,
     googleMapUrl: "https://maps.app.goo.gl/JUmjB5z9LGjmuYtTA",
+    placeId: "ChIJQ6bhjWnGBGARKyNwl8s1jB4",
     teams: ["帆船"],
     note: ""
   },
@@ -1412,7 +1471,8 @@ const accommodations = [
    hotelName     : 賽中團住宿名稱
    address       : 地址
    lat, lng      : 座標（必填）
-   googleMapUrl  : Google Maps 連結
+   googleMapUrl  : Google Maps 短網址（僅供人工備查，不參與導航邏輯）
+   placeId       : Google Place ID（供 buildGoogleMapsUrl() 優先使用）
    teams         : 入住團別／代表隊，請用陣列格式，例如 ["桌球"]
    note          : 備註
 ========================================================= */
@@ -1424,6 +1484,7 @@ const eventGroups = [
     lat: 35.1689389148943,
     lng: 136.900704263245,
     googleMapUrl: "https://maps.app.goo.gl/PJvgE4KrnNdaxDk6A",
+    placeId: "ChIJn2v8ASt3A2ARd888DWQlFUs",
     teams: ["桌球"],
     note: ""
   },
@@ -1434,6 +1495,7 @@ const eventGroups = [
     lat: 35.1604889396868,
     lng: 136.885397463731,
     googleMapUrl: "https://maps.app.goo.gl/uzgPfU5Xxt69rgji9",
+    placeId: "ChIJ77VVfgB3A2ARBEZ2hVfYVWE",
     teams: ["射箭", "舉重"],
     note: ""
   },
@@ -1444,6 +1506,7 @@ const eventGroups = [
     lat: 35.1726032044379,
     lng: 136.902724799326,
     googleMapUrl: "https://maps.app.goo.gl/VesvZmAFX4qQiGYh7",
+    placeId: "ChIJywEAQNVwA2ARDxxIX5PS3G4",
     teams: ["競技體操"],
     note: ""
   },
@@ -1454,6 +1517,7 @@ const eventGroups = [
     lat: 35.1713728456316,
     lng: 136.906627615454,
     googleMapUrl: "https://maps.app.goo.gl/FtjbPcTc6ZqCrX1Z9",
+    placeId: "ChIJw4LCq9VwA2AR15wGfl6Bbho",
     teams: [],
     note: ""
   },
@@ -1511,19 +1575,52 @@ function popupRow(label, value) {
   return `<tr><td class="label">${label}</td><td>${value}</td></tr>`;
 }
 
-// 產生 Google Maps 連結：優先使用經緯度組成標準搜尋網址，
-// 避免 https://maps.app.goo.gl/... 短網址在 iOS Google Maps App 出現「不支援的連結」問題；
-// 若經緯度非數字，才退回使用原本的 googleMapUrl（不修改任何資料本身）
+// ===== Google Maps 連結產生邏輯：集中於此單一函式管理 =====
+// 未來若 Google Maps 連結規則變更，只需修改這個函式即可，
+// 不需要修改任何 Popup 或四個資料陣列。
+//
+// 優先順序：
+// ① placeId 存在 → 使用「名稱＋地址」＋ query_place_id（最精準）
+// ② 無 placeId，但名稱與地址存在 → 使用「名稱＋地址」搜尋
+// ③ 名稱或地址不存在 → 退回使用 lat,lng 座標搜尋
+// ④ 皆不存在 → 回傳空字串（不顯示 Google Maps 按鈕）
+//
+// 注意：item.googleMapUrl 僅保留於資料陣列作為人工備查用途，
+// 完全不參與這裡的網站導航邏輯。
 function buildGoogleMapsUrl(item) {
-  if (
-    typeof item.lat === 'number' &&
-    typeof item.lng === 'number'
-  ) {
+  const name = item.hotelName || item.venueName || item.stationName || '';
+  const address = item.address || '';
+  const nameAndAddress = [name, address].filter(Boolean).join(' ');
+
+  // ① Place ID 優先
+  if (item.placeId) {
+    if (nameAndAddress) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        nameAndAddress
+      )}&query_place_id=${encodeURIComponent(item.placeId)}`;
+    }
+    // 沒有名稱／地址可組成 query，但仍有 placeId 時，退回用座標作為 query 搭配 place_id
+    if (typeof item.lat === 'number' && typeof item.lng === 'number') {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${item.lat},${item.lng}`
+      )}&query_place_id=${encodeURIComponent(item.placeId)}`;
+    }
+  }
+
+  // ② 沒有 placeId，但名稱＋地址存在
+  if (nameAndAddress) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nameAndAddress)}`;
+  }
+
+  // ③ 名稱／地址皆不存在，退回使用經緯度
+  if (typeof item.lat === 'number' && typeof item.lng === 'number') {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
       `${item.lat},${item.lng}`
     )}`;
   }
-  return item.googleMapUrl || '';
+
+  // ④ 全部不存在
+  return '';
 }
 
 function gmapLinkHtml(url) {
